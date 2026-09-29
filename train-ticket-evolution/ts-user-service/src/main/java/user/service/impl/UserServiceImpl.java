@@ -125,7 +125,7 @@ public class UserServiceImpl implements UserService {
         if (user != null) {
             return new Response<>(1, "Find User Success", user);
         }
-        UserServiceImpl.LOGGER.error("[findByUserId][Get user by id error,user is null][UserId: {}]",userId);
+        UserServiceImpl.LOGGER.error("[findByUserId][No user record for this ID][userId={}]",userId);
         return new Response<>(0, "No User", null);
     }
 
@@ -142,7 +142,7 @@ public class UserServiceImpl implements UserService {
             LOGGER.info("[deleteUser][DELETE SUCCESS][userId: {}]", userId);
             return new Response<>(1, "DELETE SUCCESS", null);
         } else {
-            UserServiceImpl.LOGGER.error("[deleteUser][Delete user error][User not found][UserId: {}]",userId);
+            UserServiceImpl.LOGGER.error("User {} cannot be deleted: no matching account",userId);
             return new Response<>(0, "USER NOT EXISTS", null);
         }
     }
@@ -150,7 +150,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public Response updateUser(UserDto userDto, HttpHeaders headers) {
-        LOGGER.info("[updateUser][UPDATE USER: {}]", userDto.toString());
+        LOGGER.info("[updateUser][Applying user update][details: {}]", userDto.toString());
         User oldUser = userRepository.findByUserId(userDto.getUserId());
         if (oldUser != null) {
             User newUser = User.builder().email(userDto.getEmail())
@@ -164,7 +164,7 @@ public class UserServiceImpl implements UserService {
             userRepository.save(newUser);
             return new Response<>(1, "SAVE USER SUCCESS", newUser);
         } else {
-            UserServiceImpl.LOGGER.error("[updateUser][Update user error][User not found][UserId: {}]",userDto.getUserId());
+            UserServiceImpl.LOGGER.error("[updateUser] Update rejected; userId={} does not exist",userDto.getUserId());
             return new Response(0, "USER NOT EXISTS", null);
         }
     }
@@ -184,6 +184,6 @@ public class UserServiceImpl implements UserService {
                 HttpMethod.DELETE,
                 httpEntity,
                 Response.class);
-        LOGGER.info("[deleteUserAuth][DELETE USER AUTH SUCCESS][userId: {}]", userId);
+        LOGGER.info("Authentication record removed for user {} (deleteUserAuth)", userId);
     }
 }

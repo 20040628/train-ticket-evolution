@@ -161,7 +161,7 @@ public class RoutePlanServiceImpl implements RoutePlanService {
     public Response searchMinStopStations(RoutePlanInfo info, HttpHeaders headers) {
         String fromStationId = info.getStartStation();
         String toStationId = info.getEndStation();
-        RoutePlanServiceImpl.LOGGER.info("[searchMinStopStations][Start and Finish][From Id: {} To: {}]", fromStationId , toStationId);
+        RoutePlanServiceImpl.LOGGER.info("[searchMinStopStations][Route search endpoints][fromStationId={}, toStationId={}]", fromStationId , toStationId);
         //1.Get the route through the two stations
 
         HttpEntity requestEntity = new HttpEntity(null);
@@ -304,7 +304,7 @@ public class RoutePlanServiceImpl implements RoutePlanService {
     }
 
     private ArrayList<TripResponse> getTripFromHighSpeedTravelServive(TripInfo info, HttpHeaders headers) {
-        RoutePlanServiceImpl.LOGGER.info("[getTripFromHighSpeedTravelServive][trip info: {}]", info);
+        RoutePlanServiceImpl.LOGGER.info("High-speed trip query input: {}", info);
         HttpEntity requestEntity = new HttpEntity(info, null);
         String travel_service_url=getServiceUrl("ts-travel-service");
         ResponseEntity<Response<ArrayList<TripResponse>>> re = restTemplate.exchange(
@@ -315,7 +315,7 @@ public class RoutePlanServiceImpl implements RoutePlanService {
                 });
 
         ArrayList<TripResponse> tripResponses = re.getBody().getData();
-        RoutePlanServiceImpl.LOGGER.info("[getTripFromHighSpeedTravelServive][Route Plan Get Trip][Size:{}]", tripResponses.size());
+        RoutePlanServiceImpl.LOGGER.info("[getTripFromHighSpeedTravelServive] Received {} trip options from travel service", tripResponses.size());
         return tripResponses;
     }
 
@@ -329,7 +329,7 @@ public class RoutePlanServiceImpl implements RoutePlanService {
                 new ParameterizedTypeReference<Response<ArrayList<TripResponse>>>() {
                 });
         ArrayList<TripResponse> list = re.getBody().getData();
-        RoutePlanServiceImpl.LOGGER.info("[getTripFromNormalTrainTravelService][Route Plan Get TripOther][Size:{}]", list.size());
+        RoutePlanServiceImpl.LOGGER.info("Normal-train service returned {} trip options (getTripFromNormalTrainTravelService)", list.size());
         return list;
     }
 

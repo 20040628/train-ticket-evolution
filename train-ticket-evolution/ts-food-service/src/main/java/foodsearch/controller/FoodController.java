@@ -55,7 +55,7 @@ public class FoodController {
 
     @PostMapping(path = "/orders")
     public HttpEntity createFoodOrder(@RequestBody FoodOrder addFoodOrder, @RequestHeader HttpHeaders headers) {
-        FoodController.LOGGER.info("[createFoodOrder][Try to Create a FoodOrder!]");
+        FoodController.LOGGER.info("[createFoodOrder][Food-order creation request received]");
         return ok(foodService.createFoodOrder(addFoodOrder, headers));
     }
 
@@ -75,7 +75,7 @@ public class FoodController {
     @ResponseStatus(HttpStatus.ACCEPTED)
     @DeleteMapping(path = "/orders/{orderId}")
     public HttpEntity deleteFoodOrder(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        FoodController.LOGGER.info("[deleteFoodOrder][Try to Cancel a FoodOrder!]");
+        FoodController.LOGGER.info("Cancellation requested for a food order (deleteFoodOrder)");
         return ok(foodService.deleteFoodOrder(orderId, headers));
     }
 
@@ -90,7 +90,7 @@ public class FoodController {
     public HttpEntity getAllFood(@PathVariable String date, @PathVariable String startStation,
                                  @PathVariable String endStation, @PathVariable String tripId,
                                  @RequestHeader HttpHeaders headers) {
-        FoodController.LOGGER.info("[getAllFood][Get Food Request!]");
+        FoodController.LOGGER.info("[getAllFood] Food availability request received");
         return ok(foodService.getAllFood(date, startStation, endStation, tripId, headers));
     }
 

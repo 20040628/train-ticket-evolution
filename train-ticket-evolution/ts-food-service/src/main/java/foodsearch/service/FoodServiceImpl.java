@@ -62,7 +62,7 @@ public class FoodServiceImpl implements FoodService {
         for (FoodOrder addFoodOrder : orders) {
             FoodOrder fo = foodOrderRepository.findByOrderId(addFoodOrder.getOrderId());
             if (fo != null) {
-                LOGGER.error("[createFoodOrdersInBatch][AddFoodOrder][Order Id Has Existed][OrderId: {}]", addFoodOrder.getOrderId());
+                LOGGER.error("[createFoodOrdersInBatch][Duplicate food order blocks batch creation][orderId: {}]", addFoodOrder.getOrderId());
                 error = true;
                 errorOrderId = addFoodOrder.getOrderId().toString();
                 break;
@@ -85,7 +85,7 @@ public class FoodServiceImpl implements FoodService {
             fo.setFoodName(addFoodOrder.getFoodName());
             fo.setPrice(addFoodOrder.getPrice());
             foodOrderRepository.save(fo);
-            LOGGER.info("[createFoodOrdersInBatch][AddFoodOrderBatch][Success Save One Order][FoodOrderId: {}]", fo.getOrderId());
+            LOGGER.info("Saved a batch food-order entry for order {}", fo.getOrderId());
 
             Delivery delivery = new Delivery();
             delivery.setFoodName(addFoodOrder.getFoodName());
@@ -99,11 +99,11 @@ public class FoodServiceImpl implements FoodService {
 
         // 批量发送消息
         for(String deliveryJson: deliveryJsons) {
-            LOGGER.info("[createFoodOrdersInBatch][AddFoodOrder][delivery info send to mq][delivery info: {}]", deliveryJson);
+            LOGGER.info("[createFoodOrdersInBatch] Publishing delivery information: {}", deliveryJson);
             try {
                 sender.send(deliveryJson);
             } catch (Exception e) {
-                LOGGER.error("[createFoodOrdersInBatch][AddFoodOrder][send delivery info to mq error][exception: {}]", e.toString());
+                LOGGER.error("Delivery publication failed during batch creation: {}", e.toString());
             }
         }
 
@@ -115,7 +115,7 @@ public class FoodServiceImpl implements FoodService {
 
         FoodOrder fo = foodOrderRepository.findByOrderId(addFoodOrder.getOrderId());
         if (fo != null) {
-            FoodServiceImpl.LOGGER.error("[createFoodOrder][AddFoodOrder][Order Id Has Existed][OrderId: {}]", addFoodOrder.getOrderId());
+            FoodServiceImpl.LOGGER.error("Order {} already has a food order; creation rejected", addFoodOrder.getOrderId());
             return new Response<>(0, "Order Id Has Existed.", null);
         } else {
             fo = new FoodOrder();
@@ -129,7 +129,7 @@ public class FoodServiceImpl implements FoodService {
             fo.setFoodName(addFoodOrder.getFoodName());
             fo.setPrice(addFoodOrder.getPrice());
             foodOrderRepository.save(fo);
-            FoodServiceImpl.LOGGER.info("[createFoodOrder][AddFoodOrder Success]");
+            FoodServiceImpl.LOGGER.info("[createFoodOrder][Food order saved successfully]");
 
             Delivery delivery = new Delivery();
             delivery.setFoodName(addFoodOrder.getFoodName());
@@ -159,7 +159,7 @@ public class FoodServiceImpl implements FoodService {
         } else {
 //            foodOrderRepository.deleteFoodOrderByOrderId(UUID.fromString(orderId));
             foodOrderRepository.deleteFoodOrderByOrderId(orderId);
-            FoodServiceImpl.LOGGER.info("[deleteFoodOrder][Cancel FoodOrder Success]");
+            FoodServiceImpl.LOGGER.info("[deleteFoodOrder] Food order cancellation completed");
             return new Response<>(1, success, null);
         }
     }
@@ -170,7 +170,7 @@ public class FoodServiceImpl implements FoodService {
         if (foodOrders != null && !foodOrders.isEmpty()) {
             return new Response<>(1, success, foodOrders);
         } else {
-            FoodServiceImpl.LOGGER.error("[findAllFoodOrder][Find all food order error: {}]", "No Content");
+            FoodServiceImpl.LOGGER.error("[findAllFoodOrder][No food orders returned: {}]", "No Content");
             return new Response<>(0, "No Content", null);
         }
     }
@@ -211,11 +211,11 @@ public class FoodServiceImpl implements FoodService {
 
     @Override
     public Response getAllFood(String date, String startStation, String endStation, String tripId, HttpHeaders headers) {
-        FoodServiceImpl.LOGGER.info("[getAllFood][get All Food with info][data:{} start:{} end:{} tripid:{}]", date, startStation, endStation, tripId);
+        FoodServiceImpl.LOGGER.info("[getAllFood] Food search on {}: {} -> {}, tripId={}", date, startStation, endStation, tripId);
         AllTripFood allTripFood = new AllTripFood();
 
         if (null == tripId || tripId.length() <= 2) {
-            FoodServiceImpl.LOGGER.error("[getAllFood][Get the Get Food Request Failed][Trip id is not suitable][date: {}, tripId: {}]", date, tripId);
+            FoodServiceImpl.LOGGER.error("Food search rejected (date={}, tripId={}): invalid trip ID", date, tripId);
             return new Response<>(0, "Trip id is not suitable", null);
         }
 

@@ -45,7 +45,7 @@ public class FoodDeliveryController {
 
     @GetMapping("/orders/{orderId}")
     public HttpEntity getFoodDeliveryOrderById(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        LOGGER.info("[Food Delivery Service][Get Food Delivery Order By Id]");
+        LOGGER.info("[getFoodDeliveryOrderById] Food delivery order lookup requested");
         return ok(foodDeliveryService.getFoodDeliveryOrderById(orderId, headers));
     }
 

@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
      * @param user
      */
     private void checkUserCreateInfo(User user) throws UserOperationException {
-        LOGGER.info("[checkUserCreateInfo][Check user create info][userId: {}, userName: {}]", user.getUserId(), user.getUsername());
+        LOGGER.info("[checkUserCreateInfo] Validating new user details [userId={}, userName={}]", user.getUserId(), user.getUsername());
         List<String> infos = new ArrayList<>();
 
         if (null == user.getUsername() || "".equals(user.getUsername())) {

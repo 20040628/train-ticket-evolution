@@ -107,7 +107,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
         Optional<Order> op = orderOtherRepository.findById(order.getId());
         if (!op.isPresent()) {
             orderOtherRepository.save(order);
-            OrderOtherServiceImpl.LOGGER.info("[initOrder][Init Order Success][OrderId: {}]", order.getId());
+            OrderOtherServiceImpl.LOGGER.info("Initialized order {} successfully", order.getId());
         } else {
             Order orderTemp = op.get();
             OrderOtherServiceImpl.LOGGER.error("[initOrder][Init Order Fail][Order Already Exists][OrderId: {}]", order.getId());
@@ -131,7 +131,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
         newOrder.setId(UUID.randomUUID().toString());
         Response cor = create(oai.getNewOrderInfo(), headers);
         if (cor.getStatus() == 1) {
-            OrderOtherServiceImpl.LOGGER.info("[alterOrder][Alter Order Success][newOrderId:{}]",newOrder.getId());
+            OrderOtherServiceImpl.LOGGER.info("[alterOrder] Order change completed; newOrderId={}",newOrder.getId());
             return new Response<>(1, "Alter Order Success", newOrder);
         } else {
             OrderOtherServiceImpl.LOGGER.error("[alterOrder][Alter Order Fail][Create new order fail][newOrderId: {}]", newOrder.getId());
@@ -238,7 +238,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
     public Response saveChanges(Order order, HttpHeaders headers) {
         Optional<Order> op = orderOtherRepository.findById(order.getId());
         if (!op.isPresent() ) {
-            OrderOtherServiceImpl.LOGGER.error("[saveChanges][Modify Order Fail][Order not found][OrderId: {}]", order.getId());
+            OrderOtherServiceImpl.LOGGER.error("Order {} not found; changes cannot be saved (saveChanges)", order.getId());
             return new Response<>(0, orderNotFound, null);
         } else {
             Order oldOrder = op.get();
@@ -260,7 +260,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
             oldOrder.setContactsDocumentNumber(order.getContactsDocumentNumber());
 
             orderOtherRepository.save(oldOrder);
-            OrderOtherServiceImpl.LOGGER.info("[saveChanges][Modify Order Success][OrderId: {}]",order.getId());
+            OrderOtherServiceImpl.LOGGER.info("[saveChanges][Order changes saved][orderId={}]",order.getId());
             return new Response<>(1, success, oldOrder);
         }
     }
@@ -311,7 +311,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
             } else if (order.getSeatClass() == SeatClass.HIGHSOFTBED.getCode()) {
                 cstr.setHighSoftBed(cstr.getHighSoftBed() + 1);
             } else {
-                OrderOtherServiceImpl.LOGGER.info("[queryAlreadySoldOrders][Calculate Sold Tickets][Seat class not exists][Order ID: {}]", order.getId());
+                OrderOtherServiceImpl.LOGGER.info("[queryAlreadySoldOrders] Unrecognized seat class while counting sold tickets; orderId={}", order.getId());
             }
         }
         return new Response<>(1, success, cstr);
@@ -333,7 +333,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
     public Response modifyOrder(String orderId, int status, HttpHeaders headers) {
         Optional<Order> op = orderOtherRepository.findById(orderId);
         if (!op.isPresent()) {
-            OrderOtherServiceImpl.LOGGER.error("[modifyOrder][Modify order Fail][Order not found][OrderId: {}]",orderId);
+            OrderOtherServiceImpl.LOGGER.error("[modifyOrder] Missing order {} prevents status update",orderId);
             return new Response<>(0, orderNotFound, null);
         } else {
             Order order = op.get();
@@ -448,7 +448,7 @@ public class OrderOtherServiceImpl implements OrderOtherService {
 
         Optional<Order> op = orderOtherRepository.findById(order.getId());
         if(!op.isPresent()) {
-            OrderOtherServiceImpl.LOGGER.error("[updateOrder][Admin Update Order Fail][Order not found][OrderId: {}]",order.getId());
+            OrderOtherServiceImpl.LOGGER.error("[updateOrder][Admin update rejected: order not found][orderId: {}]",order.getId());
             return new Response<>(0, orderNotFound, null);
         } else {
             Order oldOrder = op.get();

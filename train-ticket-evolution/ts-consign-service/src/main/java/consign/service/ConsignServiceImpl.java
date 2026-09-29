@@ -52,7 +52,7 @@ public class ConsignServiceImpl implements ConsignService {
         consignRecord.setId(UUID.randomUUID().toString());
         consignRecord.setOrderId(consignRequest.getOrderId().toString());
         consignRecord.setAccountId(consignRequest.getAccountId().toString());
-        ConsignServiceImpl.LOGGER.info("[insertConsignRecord][Insert Info][handle date: {}, target date: {}]", consignRequest.getHandleDate(), consignRequest.getTargetDate());
+        ConsignServiceImpl.LOGGER.info("[insertConsignRecord] Consign dates [handleDate={}, targetDate={}]", consignRequest.getHandleDate(), consignRequest.getTargetDate());
         consignRecord.setHandleDate(consignRequest.getHandleDate());
         consignRecord.setTargetDate(consignRequest.getTargetDate());
         consignRecord.setFrom(consignRequest.getFrom());
@@ -72,7 +72,7 @@ public class ConsignServiceImpl implements ConsignService {
                 });
         consignRecord.setPrice(re.getBody().getData());
 
-        LOGGER.info("[insertConsignRecord][SAVE consign info][consignRecord : {}]", consignRecord.toString());
+        LOGGER.info("Saving consign record: {}", consignRecord.toString());
         ConsignRecord result = repository.save(consignRecord);
         LOGGER.info("[insertConsignRecord][SAVE consign result][result: {}]", result.toString());
         return new Response<>(1, "You have consigned successfully! The price is " + result.getPrice(), result);
@@ -143,7 +143,7 @@ public class ConsignServiceImpl implements ConsignService {
         if (consignRecords != null && !consignRecords.isEmpty()) {
             return new Response<>(1, "Find consign by consignee success", consignRecords);
         }else {
-            LOGGER.warn("[queryByConsignee][No Content according to consignee][consignee: {}]", consignee);
+            LOGGER.warn("No consign records match consignee '{}' (queryByConsignee)", consignee);
             return new Response<>(0, "No Content according to consignee", null);
         }
     }

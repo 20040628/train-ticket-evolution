@@ -51,7 +51,7 @@ public class RebookServiceImpl implements RebookService {
 
         if (queryOrderResult.getStatus() == 1) {
             if (queryOrderResult.getData().getStatus() != 1) {
-                RebookServiceImpl.LOGGER.warn("[rebook][Rebook warn][Order not suitable to rebook][OrderId: {}]",info.getOrderId());
+                RebookServiceImpl.LOGGER.warn("Order {} is not eligible for rebooking",info.getOrderId());
                 return new Response<>(0, "you order not suitable to rebook!", null);
             }
         } else {
@@ -67,13 +67,13 @@ public class RebookServiceImpl implements RebookService {
         } else if (status == OrderStatus.PAID.getCode()) {
             // do nothing
         } else if (status == OrderStatus.CHANGE.getCode()) {
-            RebookServiceImpl.LOGGER.warn("[rebook][Rebook warn][Order can't change twice][OrderId: {}]",info.getOrderId());
+            RebookServiceImpl.LOGGER.warn("[rebook] Second ticket change rejected; orderId={}",info.getOrderId());
             return new Response<>(0, "You have already changed your ticket and you can only change one time.", null);
         } else if (status == OrderStatus.COLLECTED.getCode()) {
-            RebookServiceImpl.LOGGER.warn("[rebook][Rebook warn][Order already collected][OrderId: {}]",info.getOrderId());
+            RebookServiceImpl.LOGGER.warn("[rebook][Ticket already collected][orderId: {}]",info.getOrderId());
             return new Response<>(0, "You have already collected your ticket and you can change it now.", null);
         } else {
-            RebookServiceImpl.LOGGER.warn("[rebook][Rebook warn][Order can't change][OrderId: {}]",info.getOrderId());
+            RebookServiceImpl.LOGGER.warn("[rebook] Ticket change not permitted for order {}",info.getOrderId());
             return new Response<>(0, "You can't change your ticket.", null);
         }
 
@@ -176,7 +176,7 @@ public class RebookServiceImpl implements RebookService {
         if (payDifferentMoney(info.getOrderId(), info.getTripId(), info.getLoginId(), priceNew.subtract(priceOld).toString(), httpHeaders)) {
             return updateOrder(order, info, gtdr, ticketPrice, httpHeaders);
         } else {
-            RebookServiceImpl.LOGGER.warn("[payDifference][Pay difference warn][Can't pay the difference money][OrderId: {},LoginId: {},TripId: {}]",info.getOrderId(),info.getLoginId(),info.getTripId());
+            RebookServiceImpl.LOGGER.warn("[payDifference][Fare-difference payment failed][orderId={}, loginId={}, tripId={}]",info.getOrderId(),info.getLoginId(),info.getTripId());
             return new Response<>(0, "Can't pay the difference,please try again", null);
         }
     }
@@ -223,7 +223,7 @@ public class RebookServiceImpl implements RebookService {
             if (changeOrderResult.getStatus() == 1) {
                 return new Response<>(1, "Success!", order);
             } else {
-                RebookServiceImpl.LOGGER.error("[updateOrder][Update order error][OrderId: {},TripId: {}]",info.getOrderId(),info.getTripId());
+                RebookServiceImpl.LOGGER.error("[updateOrder] Could not update order {} for trip {}",info.getOrderId(),info.getTripId());
                 return new Response<>(0, "Can't update Order!", null);
             }
         } else {
@@ -424,7 +424,7 @@ public class RebookServiceImpl implements RebookService {
                 Response.class);
         Response result = re.getBody();
         if ( result.getStatus() == 0) {
-            LOGGER.warn("[getRouteByRouteId][Get Route By Id Failed][Fail msg: {}]", result.getMsg());
+            LOGGER.warn("Route lookup failed; service response: {}", result.getMsg());
             return null;
         } else {
             LOGGER.info("[getRouteByRouteId][Get Route By Id][Success]");

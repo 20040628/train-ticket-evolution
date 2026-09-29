@@ -38,7 +38,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     @Override
     public Response getAllOrders(HttpHeaders headers) {
 
-        AdminOrderServiceImpl.LOGGER.info("[getAllOrders][Get All Orders: Generate Reponse Begin]");
+        AdminOrderServiceImpl.LOGGER.info("[getAllOrders] Preparing the combined order response");
         //Get all of the orders
         ArrayList<Order> orders = new ArrayList<>();
         //From ts-order-service
@@ -54,7 +54,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         Response<ArrayList<Order>> result = re.getBody();
 
         if (result.getStatus() == 1) {
-            AdminOrderServiceImpl.LOGGER.info("[getAllOrders][Get Orders From ts-order-service successfully!]");
+            AdminOrderServiceImpl.LOGGER.info("Orders received successfully from ts-order-service");
             ArrayList<Order> orders1 = result.getData();
             orders.addAll(orders1);
         } else {
@@ -72,7 +72,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         result = re2.getBody();
 
         if (result.getStatus() == 1) {
-            AdminOrderServiceImpl.LOGGER.info("[getAllOrders][Get Orders From ts-order-other-service successfully!]");
+            AdminOrderServiceImpl.LOGGER.info("ts-order-other-service returned its order list successfully");
             ArrayList<Order> orders1 = (ArrayList<Order>) result.getData();
             orders.addAll(orders1);
         } else {
@@ -87,7 +87,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     public Response deleteOrder(String orderId, String trainNumber, HttpHeaders headers) {
         Response deleteOrderResult;
         if (trainNumber.startsWith("G") || trainNumber.startsWith("D")) {
-            AdminOrderServiceImpl.LOGGER.info("[deleteOrder][Delete Order][orderId: {}, trainNumber: {}]", orderId, trainNumber);
+            AdminOrderServiceImpl.LOGGER.info("[deleteOrder] Deleting order {} for train {}", orderId, trainNumber);
             HttpEntity requestEntity = new HttpEntity(null);
             String order_service_url = getServiceUrl("ts-order-service");
             ResponseEntity<Response> re = restTemplate.exchange(
@@ -117,10 +117,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
     public Response updateOrder(Order request, HttpHeaders headers) {
 
         Response updateOrderResult;
-        LOGGER.info("[updateOrder][UPDATE ORDER INFO][request info: {}]", request.toString());
+        LOGGER.info("Applying requested order changes: {}", request.toString());
         if (request.getTrainNumber().startsWith("G") || request.getTrainNumber().startsWith("D")) {
 
-            AdminOrderServiceImpl.LOGGER.info("[updateOrder][Update Order][trainNumber starts With G or D]");
+            AdminOrderServiceImpl.LOGGER.info("[updateOrder] G/D train detected; routing update to ts-order-service");
             HttpEntity requestEntity = new HttpEntity(request, headers);
             String order_service_url = getServiceUrl("ts-order-service");
             ResponseEntity<Response> re = restTemplate.exchange(
@@ -131,7 +131,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
             updateOrderResult = re.getBody();
 
         } else {
-            AdminOrderServiceImpl.LOGGER.info("[updateOrder][Add New Order Other][trainNumber doesn't starts With G or D]");
+            AdminOrderServiceImpl.LOGGER.info("Non-G/D order update uses ts-order-other-service [updateOrder]");
             HttpEntity requestEntity = new HttpEntity(request, headers);
             String order_other_service_url = getServiceUrl("ts-order-other-service");
             ResponseEntity<Response> re = restTemplate.exchange(

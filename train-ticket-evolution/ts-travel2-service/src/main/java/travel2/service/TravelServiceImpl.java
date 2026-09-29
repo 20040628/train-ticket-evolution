@@ -79,12 +79,12 @@ public class TravelServiceImpl implements TravelService {
             trainType = getTrainTypeByName(trip.getTrainTypeName(), headers);
         }
         else {
-            TravelServiceImpl.LOGGER.error("[getTrainTypeByTripId[]Get Train Type by Trip id error][Trip not found][TripId: {}]",tripId);
+            TravelServiceImpl.LOGGER.error("[getTrainTypeByTripId] Missing trip prevents train-type lookup (tripId={})",tripId);
         }
         if (trainType != null) {
             return new Response<>(1, "Success query Train by trip id", trainType);
         } else {
-            TravelServiceImpl.LOGGER.error("[getTrainTypeByTripId][Get Train Type by Trip id error][Train Type not found][TripId: {}]",tripId);
+            TravelServiceImpl.LOGGER.error("[getTrainTypeByTripId][No train type found for trip {}]",tripId);
             return new Response<>(0, noCnontent, null);
         }
     }
@@ -117,7 +117,7 @@ public class TravelServiceImpl implements TravelService {
             repository.save(trip);
             return new Response<>(1, "Create trip info:" + ti.toString() + ".", null);
         } else {
-            TravelServiceImpl.LOGGER.error("[getTripByRoute][Create trip error][Trip already exists][TripId: {}]",info.getTripId());
+            TravelServiceImpl.LOGGER.error("[create][Duplicate trip; creation not performed][tripId: {}]",info.getTripId());
             return new Response<>(1, "Trip " + info.getTripId() + " already exists", null);
         }
     }
@@ -149,7 +149,7 @@ public class TravelServiceImpl implements TravelService {
             repository.save(t);
             return new Response<>(1, "Update trip info:" + ti.toString(), t);
         } else {
-            TravelServiceImpl.LOGGER.error("[update][Update trip error][Trip not found][TripId: {}]",info.getTripId());
+            TravelServiceImpl.LOGGER.error("Trip update failed: no existing tripId={}",info.getTripId());
             return new Response<>(1, "Trip" + info.getTripId() + "doesn 't exists", null);
         }
     }
@@ -200,7 +200,7 @@ public class TravelServiceImpl implements TravelService {
                 //Get the detailed route list of this train
                 TripResponse response = getTickets(tempTrip, null, StartPlaceName, endPlaceName, info.getDepartureTime(), headers);
                 if (response == null) {
-                    TravelServiceImpl.LOGGER.warn("[query][Query trip error][Tickets not found][start: {},end: {},time: {}]", StartPlaceName, endPlaceName, info.getDepartureTime());
+                    TravelServiceImpl.LOGGER.warn("[query] No ticket response from {} to {} at {}", StartPlaceName, endPlaceName, info.getDepartureTime());
                 }else{
                     list.add(response);
                 }
@@ -212,12 +212,12 @@ public class TravelServiceImpl implements TravelService {
     @Override
     public Response getTripAllDetailInfo(TripAllDetailInfo gtdi, HttpHeaders headers) {
         TripAllDetail gtdr = new TripAllDetail();
-        TravelServiceImpl.LOGGER.debug("[getTripAllDetailInfo][gtdi info: {}]", gtdi.toString());
+        TravelServiceImpl.LOGGER.debug("Trip-detail query input: {} (getTripAllDetailInfo)", gtdi.toString());
         Trip trip = repository.findByTripId(new TripId(gtdi.getTripId()));
         if (trip == null) {
             gtdr.setTripResponse(null);
             gtdr.setTrip(null);
-            TravelServiceImpl.LOGGER.error("[getTripAllDetailInfo][Get trip detail error][Trip not found][TripId: {}]",gtdi.getTripId());
+            TravelServiceImpl.LOGGER.error("[getTripAllDetailInfo][Details unavailable: trip not found][tripId={}]",gtdi.getTripId());
             return new Response<>(0, "Trip not found", gtdr);
         } else {
             String endPlaceName = gtdi.getTo();
@@ -226,7 +226,7 @@ public class TravelServiceImpl implements TravelService {
             if (tripResponse == null) {
                 gtdr.setTrip(null);
                 gtdr.setTripResponse(null);
-                TravelServiceImpl.LOGGER.warn("[getTripAllDetailInfo][Query trip error][Tickets not found][start: {},end: {}]", gtdi.getTo(), gtdi.getFrom());
+                TravelServiceImpl.LOGGER.warn("[getTripAllDetailInfo] No tickets to {} from {}", gtdi.getTo(), gtdi.getFrom());
                 return new Response<>(0, "getTickets failed", gtdr);
             } else {
                 gtdr.setTripResponse(tripResponse);
@@ -257,7 +257,7 @@ public class TravelServiceImpl implements TravelService {
             tripMap.put(trip.getTripId().toString(), trip);
         }
 
-        TravelServiceImpl.LOGGER.info("[getTicketsByBatch][before get basic][trips: {}]", trips);
+        TravelServiceImpl.LOGGER.info("[getTicketsByBatch][Requesting basic-service trip data][trips: {}]", trips);
 
         HttpEntity requestEntity = new HttpEntity(infos, null);
         String basic_service_url = getServiceUrl("ts-basic-service");
@@ -363,13 +363,13 @@ public class TravelServiceImpl implements TravelService {
         calendarStart.setTime(StringUtils.String2Date(trip.getStartTime()));
         calendarStart.add(Calendar.MINUTE, minutesStart);
         response.setStartTime(StringUtils.Date2String(calendarStart.getTime()));
-        TravelServiceImpl.LOGGER.info("[getTickets][Calculate distance][calculate time：{}  time: {}]", minutesStart, calendarStart.getTime());
+        TravelServiceImpl.LOGGER.info("[setResponse] Departure calculated with offsetMinutes={}; departureTime={}", minutesStart, calendarStart.getTime());
 
         Calendar calendarEnd = Calendar.getInstance();
         calendarEnd.setTime(StringUtils.String2Date(trip.getStartTime()));
         calendarEnd.add(Calendar.MINUTE, minutesEnd);
         response.setEndTime(StringUtils.Date2String(calendarEnd.getTime()));
-        TravelServiceImpl.LOGGER.info("[getTickets][Calculate distance][calculate time：{}  time: {}]", minutesEnd, calendarEnd.getTime());
+        TravelServiceImpl.LOGGER.info("Calculated arrival: offsetMinutes={}, arrivalTime={}", minutesEnd, calendarEnd.getTime());
 
         response.setTripId(trip.getTripId());
         response.setTrainTypeName(trip.getTrainTypeName());
@@ -456,7 +456,7 @@ public class TravelServiceImpl implements TravelService {
         seatRequest.setTotalNum(totalNum);
         seatRequest.setStations(stationList);
 
-        TravelServiceImpl.LOGGER.info("[getRestTicketNumber][Seat request][request: {}]", seatRequest.toString());
+        TravelServiceImpl.LOGGER.info("[getRestTicketNumber] Remaining-seat request payload: {}", seatRequest.toString());
 
         HttpEntity requestEntity = new HttpEntity(seatRequest, null);
         String seat_service_url = getServiceUrl("ts-seat-service");
@@ -488,7 +488,7 @@ public class TravelServiceImpl implements TravelService {
         if (!adminTrips.isEmpty()) {
             return new Response<>(1, "Travel Service Admin Query All Travel Success", adminTrips);
         } else {
-            TravelServiceImpl.LOGGER.warn("[adminQueryAll][Admin query all trips warn][{}]","No Content");
+            TravelServiceImpl.LOGGER.warn("Admin trip listing returned no results: {}","No Content");
             return new Response<>(0, noCnontent, null);
         }
     }

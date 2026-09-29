@@ -31,13 +31,13 @@ public class TravelPlanController {
 
     @PostMapping(value="/travelPlan/transferResult" )
     public HttpEntity getTransferResult(@RequestBody TransferTravelInfo info, @RequestHeader HttpHeaders headers) {
-        TravelPlanController.LOGGER.info("[getTransferSearch][Search Transit][start: {},end: {}]",info.getStartStation(),info.getEndStation());
+        TravelPlanController.LOGGER.info("[getTransferResult] Transfer search requested: {} -> {}",info.getStartStation(),info.getEndStation());
         return ok(travelPlanService.getTransferSearch(info, headers));
     }
 
     @PostMapping(value="/travelPlan/cheapest")
     public HttpEntity getByCheapest(@RequestBody TripInfo queryInfo, @RequestHeader HttpHeaders headers) {
-        TravelPlanController.LOGGER.info("[getCheapest][Search Cheapest][start: {},end: {},time: {}]",queryInfo.getStartPlace(),queryInfo.getEndPlace(),queryInfo.getDepartureTime());
+        TravelPlanController.LOGGER.info("Cheapest-trip request from {} to {} at {}",queryInfo.getStartPlace(),queryInfo.getEndPlace(),queryInfo.getDepartureTime());
         return ok(travelPlanService.getCheapest(queryInfo, headers));
     }
 
@@ -49,7 +49,7 @@ public class TravelPlanController {
 
     @PostMapping(value="/travelPlan/minStation")
     public HttpEntity getByMinStation(@RequestBody TripInfo queryInfo, @RequestHeader HttpHeaders headers) {
-        TravelPlanController.LOGGER.info("[getMinStation][Search Min Station][start: {},end: {},time: {}]",queryInfo.getStartPlace(),queryInfo.getEndPlace(),queryInfo.getDepartureTime());
+        TravelPlanController.LOGGER.info("[getByMinStation][Fewest-stop trip search][from={}, to={}, departureTime={}]",queryInfo.getStartPlace(),queryInfo.getEndPlace(),queryInfo.getDepartureTime());
         return ok(travelPlanService.getMinStation(queryInfo, headers));
     }
 

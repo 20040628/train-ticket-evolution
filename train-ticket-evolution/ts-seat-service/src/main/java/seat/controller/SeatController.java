@@ -38,7 +38,7 @@ public class SeatController {
     @CrossOrigin(origins = "*")
     @PostMapping(value = "/seats")
     public HttpEntity create(@RequestBody Seat seatRequest, @RequestHeader HttpHeaders headers) {
-        SeatController.LOGGER.info("[distributeSeat][Create seat][TravelDate: {},TrainNumber: {},SeatType: {}]",seatRequest.getTravelDate(),seatRequest.getTrainNumber(),seatRequest.getSeatType());
+        SeatController.LOGGER.info("Seat allocation requested: travelDate={}, trainNumber={}, seatType={}",seatRequest.getTravelDate(),seatRequest.getTrainNumber(),seatRequest.getSeatType());
         return ok(seatService.distributeSeat(seatRequest, headers));
     }
 

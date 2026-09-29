@@ -45,7 +45,7 @@ public class SecurityController {
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/securityConfigs")
     public HttpEntity update(@RequestBody SecurityConfig info, @RequestHeader HttpHeaders headers) {
-        SecurityController.LOGGER.info("[modifySecurityConfig][Update][SecurityConfig Name: {}]", info.getName());
+        SecurityController.LOGGER.info("[modifySecurityConfig] Update requested for configuration '{}'", info.getName());
         return ok(securityService.modifySecurityConfig(info, headers));
     }
 
@@ -59,7 +59,7 @@ public class SecurityController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/securityConfigs/{accountId}")
     public HttpEntity check(@PathVariable String accountId, @RequestHeader HttpHeaders headers) {
-        SecurityController.LOGGER.info("[check][Check Security][Check Account Id: {}]", accountId);
+        SecurityController.LOGGER.info("Account {}: security check requested", accountId);
         return ok(securityService.check(accountId, headers));
     }
 

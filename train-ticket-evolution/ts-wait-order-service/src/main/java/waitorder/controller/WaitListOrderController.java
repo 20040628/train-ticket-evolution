@@ -32,7 +32,7 @@ public class WaitListOrderController {
 
     @PostMapping(path = "/order")
     public HttpEntity createNewOrder(@RequestBody WaitListOrderVO createOrder, @RequestHeader HttpHeaders headers) {
-        WaitListOrderController.LOGGER.info("[createWaitOrder][Create Wait Order][from {} to {} at {}]", createOrder.getFrom(), createOrder.getTo(), createOrder.getDate());
+        WaitListOrderController.LOGGER.info("Wait-list booking requested from {} to {} on {}", createOrder.getFrom(), createOrder.getTo(), createOrder.getDate());
         return ok(waitListOrderService.create(createOrder, headers));
     }
 
@@ -44,7 +44,7 @@ public class WaitListOrderController {
 
     @GetMapping(path = "/waitlistorders")
     public HttpEntity getWaitListOrders(@RequestHeader HttpHeaders headers){
-        LOGGER.info("[getWaitListOrders][Get All Wait List Orders]");
+        LOGGER.info("Wait-list order listing requested");
         return ok(waitListOrderService.getAllWaitListOrders(headers));
     }
 

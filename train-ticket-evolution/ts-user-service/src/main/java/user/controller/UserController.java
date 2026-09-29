@@ -40,7 +40,7 @@ public class UserController {
 
     @GetMapping("/{userName}")
     public ResponseEntity<Response> getUserByUserName(@PathVariable String userName, @RequestHeader HttpHeaders headers) {
-        UserController.LOGGER.info("[getUserByUserName][Get user by user name][UserName: {}]",userName);
+        UserController.LOGGER.info("[getUserByUserName][User lookup requested][userName: {}]",userName);
         return ok(userService.findByUserName(userName, headers));
     }
     @GetMapping("/id/{userId}")
@@ -51,7 +51,7 @@ public class UserController {
 
     @PostMapping("/register")
     public ResponseEntity<Response> registerUser(@RequestBody UserDto userDto, @RequestHeader HttpHeaders headers) {
-        UserController.LOGGER.info("[registerUser][Register user][UserName: {}]",userDto.getUserName());
+        UserController.LOGGER.info("Registration requested for username '{}'",userDto.getUserName());
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(userDto, headers));
     }
 
@@ -67,7 +67,7 @@ public class UserController {
     @PutMapping
     public ResponseEntity<Response> updateUser(@RequestBody UserDto user,
                                                @RequestHeader HttpHeaders headers) {
-        UserController.LOGGER.info("[updateUser][Update user][UserId: {}]",user.getUserId());
+        UserController.LOGGER.info("[updateUser] User changes requested (userId={})",user.getUserId());
         return ok(userService.updateUser(user, headers));
     }
 

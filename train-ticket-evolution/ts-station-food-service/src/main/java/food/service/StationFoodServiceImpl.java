@@ -59,7 +59,7 @@ public class StationFoodServiceImpl implements StationFoodService {
         if (stationFoodStores != null && !stationFoodStores.isEmpty()) {
             return new Response<>(1, success, stationFoodStores);
         } else {
-            StationFoodServiceImpl.LOGGER.error("List food stores error: {}", "Food store is empty");
+            StationFoodServiceImpl.LOGGER.error("Food-store listing returned no entries: {}", "Food store is empty");
             return new Response<>(0, "Food store is empty", null);
         }
     }
@@ -81,7 +81,7 @@ public class StationFoodServiceImpl implements StationFoodService {
         if (stationFoodStoreList != null && !stationFoodStoreList.isEmpty()) {
             return new Response<>(1, success, stationFoodStoreList);
         } else {
-            StationFoodServiceImpl.LOGGER.error("List food stores by station id error: {}, stationName: {}", "Food store is empty", stationName);
+            StationFoodServiceImpl.LOGGER.error("Station food-store lookup failed: {}; stationName={}", "Food store is empty", stationName);
             return new Response<>(0, "Food store is empty", null);
         }
     }
@@ -103,7 +103,7 @@ public class StationFoodServiceImpl implements StationFoodService {
         if (stationFoodStoreList != null) {
             return new Response<>(1, success, stationFoodStoreList);
         } else {
-            StationFoodServiceImpl.LOGGER.error("List food stores by station ids error: {}, stationName list: {}", "Food store is empty", stationNames);
+            StationFoodServiceImpl.LOGGER.error("[getFoodStoresByStationNames] Food-store query failed: {} [stationNames={}]", "Food store is empty", stationNames);
             return new Response<>(0, noContent, null);
         }
     }

@@ -55,7 +55,7 @@ public class NotificationServiceImpl implements NotificationService{
             mailService.sendEmail(mail,"preserve_success.ftl");
             return true;
         } catch (Exception e) {
-            LOGGER.error("[preserveSuccess][mailService.sendEmai][Exception: {}]", e.getMessage());
+            LOGGER.error("[preserveSuccess][Booking confirmation email failed][error: {}]", e.getMessage());
             return false;
         }
     }
@@ -82,7 +82,7 @@ public class NotificationServiceImpl implements NotificationService{
             mailService.sendEmail(mail,"order_create_success.ftl");
             return true;
         } catch (Exception e) {
-            LOGGER.error("[orderCreateSuccess][mailService.sendEmai][Exception: {}]", e.getMessage());
+            LOGGER.error("Could not send the order-creation email: {} (orderCreateSuccess)", e.getMessage());
             return false;
         }
     }

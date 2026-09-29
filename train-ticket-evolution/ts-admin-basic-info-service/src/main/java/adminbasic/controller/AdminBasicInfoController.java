@@ -34,14 +34,14 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/adminbasic/contacts")
     public HttpEntity getAllContacts(@RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[getAllContacts][Find All Contacts by admin][getAllContacts] ");
+        AdminBasicInfoController.LOGGER.info("[getAllContacts] Admin requested the complete contact list");
         return ok(adminBasicInfoService.getAllContacts(headers));
     }
 
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/contacts/{contactsId}")
     public HttpEntity deleteContacts(@PathVariable String contactsId, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[deleteContacts][Delete Contacts by admin][contactsId: {}]", contactsId);
+        AdminBasicInfoController.LOGGER.info("Admin requested deletion of contact {} [deleteContacts]", contactsId);
         return ok(adminBasicInfoService.deleteContact(contactsId, headers));
     }
 
@@ -69,14 +69,14 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @DeleteMapping(path = "/adminbasic/stations/{id}")
     public HttpEntity deleteStation(@PathVariable String id, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[deleteStation][Delete Station by admin][Station id: {}]", id);
+        AdminBasicInfoController.LOGGER.info("Admin requested deletion of station {}", id);
         return ok(adminBasicInfoService.deleteStation(id, headers));
     }
 
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/stations")
     public HttpEntity modifyStation(@RequestBody Station s, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyStation][Modify Station by admin][Station id: {}]", s.getId());
+        AdminBasicInfoController.LOGGER.info("Station update requested by admin: stationId={}", s.getId());
         return ok(adminBasicInfoService.modifyStation(s, headers));
     }
 
@@ -90,7 +90,7 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/adminbasic/trains")
     public HttpEntity getAllTrains(@RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[getAllTrains][Find All Train by admin][getAllStations]");
+        AdminBasicInfoController.LOGGER.info("[getAllTrains][Admin requested all train types]");
         return ok(adminBasicInfoService.getAllTrains(headers));
     }
 
@@ -104,7 +104,7 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/trains")
     public HttpEntity modifyTrain(@RequestBody TrainType t, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyTrain][Modify Train by admin][TrainType id: {}]", t.getId());
+        AdminBasicInfoController.LOGGER.info("[modifyTrain] Admin train-type update; id={}", t.getId());
         return ok(adminBasicInfoService.modifyTrain(t, headers));
     }
 
@@ -132,7 +132,7 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/configs")
     public HttpEntity modifyConfig(@RequestBody Config c, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyConfig][Modify Config by admin][Config name: {}]", c.getName());
+        AdminBasicInfoController.LOGGER.info("[modifyConfig][Admin requested changes to configuration '{}']", c.getName());
         return ok(adminBasicInfoService.modifyConfig(c, headers));
     }
 
@@ -160,7 +160,7 @@ public class AdminBasicInfoController {
     @CrossOrigin(origins = "*")
     @PutMapping(path = "/adminbasic/prices")
     public HttpEntity modifyPrice(@RequestBody PriceInfo pi, @RequestHeader HttpHeaders headers) {
-        AdminBasicInfoController.LOGGER.info("[modifyPrice][Modify Price by admin][PriceInfo id: {}]", pi.getId());
+        AdminBasicInfoController.LOGGER.info("Price configuration {}: admin update requested", pi.getId());
         return ok(adminBasicInfoService.modifyPrice(pi, headers));
     }
 

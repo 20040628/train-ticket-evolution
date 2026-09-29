@@ -43,7 +43,7 @@ public class PriceController {
     @PostMapping(value = "/prices/byRouteIdsAndTrainTypes")
     public HttpEntity query(@RequestBody List<String> ridsAndTts,
                             @RequestHeader HttpHeaders headers) {
-        PriceController.LOGGER.info("[findByRouteIdAndTrainType][Query price][routeId and Train Type: {}]", ridsAndTts);
+        PriceController.LOGGER.info("[query] Price lookup request for route/train-type pairs: {}", ridsAndTts);
         return ok(service.findByRouteIdsAndTrainTypes(ridsAndTts, headers));
     }
 
@@ -62,13 +62,13 @@ public class PriceController {
 
     @DeleteMapping(value = "/prices/{pricesId}")
     public HttpEntity delete(@PathVariable String pricesId, @RequestHeader HttpHeaders headers) {
-        PriceController.LOGGER.info("[deletePriceConfig][Delete price][PriceConfigId: {}]",pricesId);
+        PriceController.LOGGER.info("Price configuration deletion requested [priceConfigId={}]",pricesId);
         return ok(service.deletePriceConfig(pricesId, headers));
     }
 
     @PutMapping(value = "/prices")
     public HttpEntity update(@RequestBody PriceConfig info, @RequestHeader HttpHeaders headers) {
-        PriceController.LOGGER.info("[updatePriceConfig][Update price][PriceConfigId: {}]",info.getId());
+        PriceController.LOGGER.info("[updatePriceConfig][Price configuration update requested][priceConfigId: {}]",info.getId());
         return ok(service.updatePriceConfig(info, headers));
     }
 }

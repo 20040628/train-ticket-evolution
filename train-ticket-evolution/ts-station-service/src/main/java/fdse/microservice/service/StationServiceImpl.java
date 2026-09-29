@@ -52,7 +52,7 @@ public class StationServiceImpl implements StationService {
 
         Optional<Station> op = repository.findById(info.getId());
         if (!op.isPresent()) {
-            StationServiceImpl.LOGGER.error("[update][Update station error][Station not found][StationId: {}]",info.getId());
+            StationServiceImpl.LOGGER.error("[update] No station exists for stationId={}; update failed",info.getId());
             return new Response<>(0, "Station not exist", null);
         } else {
             Station station = op.get();
@@ -127,7 +127,7 @@ public class StationServiceImpl implements StationService {
         if (station.isPresent()) {
             return new Response<>(1, success, station.get().getName());
         } else {
-            StationServiceImpl.LOGGER.error("[queryById][Find station name error][Station not found][StationId: {}]",stationId);
+            StationServiceImpl.LOGGER.error("[queryById][Cannot resolve station name: unknown station ID][stationId={}]",stationId);
             return new Response<>(0, "No that stationId", stationId);
         }
     }

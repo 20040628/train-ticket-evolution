@@ -37,7 +37,7 @@ public class StationController {
 
     @PostMapping(value = "/stations")
     public ResponseEntity<Response> create(@RequestBody Station station, @RequestHeader HttpHeaders headers) {
-        StationController.LOGGER.info("[create][Create station][name: {}]",station.getName());
+        StationController.LOGGER.info("[create][Station creation requested][stationName: {}]",station.getName());
         return new ResponseEntity<>(stationService.create(station, headers), HttpStatus.CREATED);
     }
 
@@ -49,7 +49,7 @@ public class StationController {
 
     @DeleteMapping(value = "/stations/{stationsId}")
     public ResponseEntity<Response> delete(@PathVariable String stationsId, @RequestHeader HttpHeaders headers) {
-        StationController.LOGGER.info("[delete][Delete station][StationId: {}]",stationsId);
+        StationController.LOGGER.info("Station {}: deletion request received",stationsId);
         return ok(stationService.delete(stationsId, headers));
     }
 

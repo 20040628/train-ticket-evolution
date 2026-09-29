@@ -41,9 +41,9 @@ public class CancelController {
     public HttpEntity cancelTicket(@PathVariable String orderId, @PathVariable String loginId,
                                    @RequestHeader HttpHeaders headers) {
 
-        CancelController.LOGGER.info("[cancelTicket][Cancel Ticket][info: {}]", orderId);
+        CancelController.LOGGER.info("Cancellation requested for order {}", orderId);
         try {
-            CancelController.LOGGER.info("[cancelTicket][Cancel Ticket, Verify Success]");
+            CancelController.LOGGER.info("[cancelTicket] Cancellation verification passed");
             return ok(cancelService.cancelOrder(orderId, loginId, headers));
         } catch (Exception e) {
             CancelController.LOGGER.error(e.getMessage());

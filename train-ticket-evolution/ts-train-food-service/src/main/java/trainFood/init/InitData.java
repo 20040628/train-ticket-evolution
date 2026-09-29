@@ -50,7 +50,7 @@ public class InitData implements CommandLineRunner{
     }
 
     private List<Food> toFoodList(String s){
-        InitData.LOGGER.info("s= {}", s);
+        InitData.LOGGER.info("Food-list source text: {}", s);
         String[] foodstring = s.split("_");
         List<Food> foodList = new ArrayList<>();
         for(int i = 0; i< foodstring.length; i++){

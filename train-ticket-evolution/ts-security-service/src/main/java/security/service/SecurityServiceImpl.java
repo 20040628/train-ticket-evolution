@@ -80,7 +80,7 @@ public class SecurityServiceImpl implements SecurityService {
     public Response modifySecurityConfig(SecurityConfig info, HttpHeaders headers) {
         SecurityConfig sc = securityRepository.findById(info.getId()).orElse(null);
         if (sc == null) {
-            SecurityServiceImpl.LOGGER.error("[modifySecurityConfig][Modify Security config error][Security config not found][SecurityConfigId: {},Name: {}]",info.getId(),info.getName());
+            SecurityServiceImpl.LOGGER.error("[modifySecurityConfig][Missing configuration prevents update][configId={}, name={}]",info.getId(),info.getName());
             return new Response<>(0, "Security Config Not Exist", null);
         } else {
             sc.setName(info.getName());
@@ -99,7 +99,7 @@ public class SecurityServiceImpl implements SecurityService {
         if (sc == null) {
             return new Response<>(1, success, id);
         } else {
-            SecurityServiceImpl.LOGGER.error("[deleteSecurityConfig][Delete Security config error][Reason not clear][SecurityConfigId: {}]",id);
+            SecurityServiceImpl.LOGGER.error("[deleteSecurityConfig] Configuration still present after deletion; id={}",id);
             return new Response<>(0, "Reason Not clear", id);
         }
     }
@@ -107,7 +107,7 @@ public class SecurityServiceImpl implements SecurityService {
     @Override
     public Response check(String accountId, HttpHeaders headers) {
         //1.Get the orders in the past one hour and the total effective votes
-        SecurityServiceImpl.LOGGER.debug("[check][Get Order Num Info]");
+        SecurityServiceImpl.LOGGER.debug("[check][Loading order counts for security validation]");
         OrderSecurity orderResult = getSecurityOrderInfoFromOrder(new Date(), accountId, headers);
         OrderSecurity orderOtherResult = getSecurityOrderOtherInfoFromOrder(new Date(), accountId, headers);
         int orderInOneHour = orderOtherResult.getOrderNumInLastOneHour() + orderResult.getOrderNumInLastOneHour();
@@ -116,11 +116,11 @@ public class SecurityServiceImpl implements SecurityService {
         SecurityServiceImpl.LOGGER.debug("[check][Get Security Config Info]");
         SecurityConfig configMaxInHour = securityRepository.findByName("max_order_1_hour");
         SecurityConfig configMaxNotUse = securityRepository.findByName("max_order_not_use");
-        SecurityServiceImpl.LOGGER.info("[check][Max][Max In One Hour: {}  Max Not Use: {}]", configMaxInHour.getValue(), configMaxNotUse.getValue());
+        SecurityServiceImpl.LOGGER.info("Security limits: maxOrdersPerHour={}, maxUnusedOrders={}", configMaxInHour.getValue(), configMaxNotUse.getValue());
         int oneHourLine = Integer.parseInt(configMaxInHour.getValue());
         int totalValidLine = Integer.parseInt(configMaxNotUse.getValue());
         if (orderInOneHour > oneHourLine || totalValidOrder > totalValidLine) {
-            SecurityServiceImpl.LOGGER.warn("[check][Check Security config warn][Too much order in last one hour or too much valid order][AccountId: {}]",accountId);
+            SecurityServiceImpl.LOGGER.warn("[check] Account {} exceeds the hourly order limit or the valid-order limit",accountId);
             return new Response<>(0, "Too much order in last one hour or too much valid order", accountId);
         } else {
             return new Response<>(1, "Success.r", accountId);
@@ -138,7 +138,7 @@ public class SecurityServiceImpl implements SecurityService {
                 });
         Response<OrderSecurity> response = re.getBody();
         OrderSecurity result =  response.getData();
-        SecurityServiceImpl.LOGGER.info("[getSecurityOrderInfoFromOrder][Get Order Info For Security][Last One Hour: {}  Total Valid Order: {}]", result.getOrderNumInLastOneHour(), result.getOrderNumOfValidOrder());
+        SecurityServiceImpl.LOGGER.info("[getSecurityOrderInfoFromOrder][Order security counts][lastHour={}, validTotal={}]", result.getOrderNumInLastOneHour(), result.getOrderNumOfValidOrder());
         return result;
     }
 

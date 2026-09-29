@@ -32,7 +32,7 @@ public class AssuranceController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/assurances")
     public HttpEntity getAllAssurances(@RequestHeader HttpHeaders headers) {
-        AssuranceController.LOGGER.info("[getAllAssurances][Get All Assurances]");
+        AssuranceController.LOGGER.info("Request received for the complete assurance list");
         return ok(assuranceService.getAllAssurances(headers));
     }
 
@@ -62,7 +62,7 @@ public class AssuranceController {
     public HttpEntity modifyAssurance(@PathVariable String assuranceId,
                                       @PathVariable String orderId,
                                       @PathVariable int typeIndex, @RequestHeader HttpHeaders headers) {
-        AssuranceController.LOGGER.info("[modifyAssurance][Modify Assurance][assuranceId: {}, orderId: {}, typeIndex: {}]",
+        AssuranceController.LOGGER.info("Assurance update requested: assuranceId={}, orderId={}, typeIndex={}",
                 assuranceId, orderId, typeIndex);
         return ok(assuranceService.modify(assuranceId, orderId, typeIndex, headers));
     }

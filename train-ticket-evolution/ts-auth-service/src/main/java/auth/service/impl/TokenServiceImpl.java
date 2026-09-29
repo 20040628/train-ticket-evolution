@@ -83,7 +83,7 @@ public class TokenServiceImpl implements TokenService {
         try {
             authenticationManager.authenticate(upat);
         } catch (AuthenticationException e) {
-            LOGGER.warn("[getToken][Incorrect username or password][username: {}, password: {}]", username, password);
+            LOGGER.warn("[getToken][Authentication rejected: incorrect username or password][username={}, password={}]", username, password);
             return new Response<>(0, "Incorrect username or password.", null);
         }
 
@@ -92,7 +92,7 @@ public class TokenServiceImpl implements TokenService {
                         InfoConstant.USER_NAME_NOT_FOUND_1, username
                 )));
         String token = jwtProvider.createToken(user);
-        LOGGER.info("[getToken][success][USER TOKEN: {} USER ID: {}]", token, user.getUserId());
+        LOGGER.info("Login succeeded: token={}, userId={}", token, user.getUserId());
         return new Response<>(1, "login success", new TokenDto(user.getUserId(), username, token));
     }
 }

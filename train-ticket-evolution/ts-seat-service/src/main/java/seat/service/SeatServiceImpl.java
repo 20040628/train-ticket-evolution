@@ -51,7 +51,7 @@ public class SeatServiceImpl implements SeatService {
         String trainNumber = seatRequest.getTrainNumber();
 
         if (trainNumber.startsWith("G") || trainNumber.startsWith("D")) {
-            SeatServiceImpl.LOGGER.info("[distributeSeat][TrainNumber start][G or D]");
+            SeatServiceImpl.LOGGER.info("[distributeSeat][G/D train seat allocation branch]");
 
             HttpEntity requestEntity = new HttpEntity(null);
             //Call the microservice to query for residual Ticket information: the set of the Ticket sold for the specified seat type
@@ -111,7 +111,7 @@ public class SeatServiceImpl implements SeatService {
             }
         }
         ticket.setSeatNo(seat);
-        SeatServiceImpl.LOGGER.info("[distributeSeat][Assign new tickets][Use a new seat number][seat number:{}]", seat);
+        SeatServiceImpl.LOGGER.info("[distributeSeat] Assigned new seat number {}", seat);
         return new Response<>(1, "Use a new seat number!", ticket);
     }
 
@@ -134,7 +134,7 @@ public class SeatServiceImpl implements SeatService {
 
         //Distinguish G\D from other trains
         String trainNumber = seatRequest.getTrainNumber();
-        SeatServiceImpl.LOGGER.info("[getLeftTicketOfInterval][Seat request][request:{}]", seatRequest.toString());
+        SeatServiceImpl.LOGGER.info("Interval availability request: {} (getLeftTicketOfInterval)", seatRequest.toString());
         if (trainNumber.startsWith("G") || trainNumber.startsWith("D")) {
             SeatServiceImpl.LOGGER.info("[getLeftTicketOfInterval][TrainNumber start with G|D][trainNumber:{}]", trainNumber);
 
@@ -148,7 +148,7 @@ public class SeatServiceImpl implements SeatService {
                     new ParameterizedTypeReference<Response<LeftTicketInfo>>() {
                     });
 
-            SeatServiceImpl.LOGGER.info("[getLeftTicketOfInterval][Get Order tickets result][result is {}]", re3);
+            SeatServiceImpl.LOGGER.info("[getLeftTicketOfInterval][Order service ticket response: {}]", re3);
             leftTicketInfo = re3.getBody().getData();
         } else {
             SeatServiceImpl.LOGGER.info("[getLeftTicketOfInterval][TrainNumber start with other capital][trainNumber:{}]", trainNumber);

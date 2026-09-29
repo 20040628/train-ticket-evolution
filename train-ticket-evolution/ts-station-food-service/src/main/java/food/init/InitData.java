@@ -58,7 +58,7 @@ public class InitData implements CommandLineRunner{
             }
 
         } catch(Exception e){
-            InitData.LOGGER.info("the foodstores.txt has format error!");
+            InitData.LOGGER.info("Invalid data format in foodstores.txt");
             InitData.LOGGER.error(e.getMessage());
             System.exit(1);
         }

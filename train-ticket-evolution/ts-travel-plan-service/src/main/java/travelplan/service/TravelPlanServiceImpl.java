@@ -174,7 +174,7 @@ public class TravelPlanServiceImpl implements TravelPlanService {
             }
             return new Response<>(1, success, lists);
         } else {
-            TravelPlanServiceImpl.LOGGER.warn("[getQuickest][Get quickest trip warn][Route Plan Result Units: {}]","No Content");
+            TravelPlanServiceImpl.LOGGER.warn("[getQuickest] No quickest-trip options returned; detail={}","No Content");
             return new Response<>(0, cannotFind, null);
         }
     }
@@ -238,7 +238,7 @@ public class TravelPlanServiceImpl implements TravelPlanService {
         seatRequest.setStations(stations);
         seatRequest.setTotalNum(totalNum);
 
-        TravelPlanServiceImpl.LOGGER.info("[getRestTicketNumber][Seat Request][Seat Request is: {}]", seatRequest.toString());
+        TravelPlanServiceImpl.LOGGER.info("[getRestTicketNumber][Remaining-seat query][request: {}]", seatRequest.toString());
         HttpEntity requestEntity = new HttpEntity(seatRequest, null);
         String seat_service_url = getServiceUrl("ts-seat-service");
         ResponseEntity<Response<Integer>> re = restTemplate.exchange(

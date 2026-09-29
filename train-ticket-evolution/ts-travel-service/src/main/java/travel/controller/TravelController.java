@@ -59,7 +59,7 @@ public class TravelController {
     public HttpEntity getTripsByRouteId(@RequestBody ArrayList<String> routeIds,
                                         @RequestHeader HttpHeaders headers) {
         // ArrayList<ArrayList<Trip>>
-        TravelController.LOGGER.info("[getTripByRoute][Get Trips by Route ids][RouteIds: {}]", routeIds.size());
+        TravelController.LOGGER.info("Trip lookup requested for {} route IDs (getTripsByRouteId)", routeIds.size());
         return ok(travelService.getTripByRoute(routeIds, headers));
     }
 
@@ -67,7 +67,7 @@ public class TravelController {
     @PostMapping(value = "/trips")
     public HttpEntity<?> createTrip(@RequestBody TravelInfo routeIds, @RequestHeader HttpHeaders headers) {
         // null
-        TravelController.LOGGER.info("[create][Create trip][TripId: {}]", routeIds.getTripId());
+        TravelController.LOGGER.info("[createTrip] Trip creation request received; tripId={}", routeIds.getTripId());
         return new ResponseEntity<>(travelService.create(routeIds, headers), HttpStatus.CREATED);
     }
 
@@ -90,7 +90,7 @@ public class TravelController {
     @PutMapping(value = "/trips")
     public HttpEntity updateTrip(@RequestBody TravelInfo info, @RequestHeader HttpHeaders headers) {
         // Trip
-        TravelController.LOGGER.info("[update][Update trip][TripId: {}]", info.getTripId());
+        TravelController.LOGGER.info("[updateTrip][Trip changes requested][tripId: {}]", info.getTripId());
         return ok(travelService.update(info, headers));
     }
 
@@ -115,11 +115,11 @@ public class TravelController {
         if (info.getStartPlace() == null || info.getStartPlace().length() == 0 ||
                 info.getEndPlace() == null || info.getEndPlace().length() == 0 ||
                 info.getDepartureTime() == null) {
-            TravelController.LOGGER.info("[query][Travel Query Fail][Something null]");
+            TravelController.LOGGER.info("[query] Travel query rejected: origin, destination or departure time is missing");
             ArrayList<TripResponse> errorList = new ArrayList<>();
             return ok(errorList);
         }
-        TravelController.LOGGER.info("[query][Query TripResponse]");
+        TravelController.LOGGER.info("Requesting trip responses through the batch query (queryInfo)");
         return ok(travelService.queryByBatch(info, headers));
     }
 
@@ -136,7 +136,7 @@ public class TravelController {
         if (info.getStartPlace() == null || info.getStartPlace().length() == 0 ||
                 info.getEndPlace() == null || info.getEndPlace().length() == 0 ||
                 info.getDepartureTime() == null) {
-            TravelController.LOGGER.info("[queryInParallel][Travel Query Fail][Something null]");
+            TravelController.LOGGER.info("[queryInParallel][Missing required travel input: start, end or departure time]");
             ArrayList<TripResponse> errorList = new ArrayList<>();
             return ok(errorList);
         }

@@ -43,7 +43,7 @@ public class StationFoodController {
     @CrossOrigin(origins = "*")
     @PostMapping("/stationfoodstores")
     public HttpEntity getFoodStoresByStationNames(@RequestBody List<String> stationNameList) {
-        StationFoodController.LOGGER.info("[Food Map Service][Get FoodStores By StationNames]");
+        StationFoodController.LOGGER.info("[getFoodStoresByStationNames] Food-store lookup requested for multiple stations");
         return ok(stationFoodService.getFoodStoresByStationNames(stationNameList));
     }
     @GetMapping("/stationfoodstores/bystoreid/{stationFoodStoreId}")

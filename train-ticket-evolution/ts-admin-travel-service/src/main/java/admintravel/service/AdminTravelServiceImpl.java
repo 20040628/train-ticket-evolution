@@ -43,7 +43,7 @@ public class AdminTravelServiceImpl implements AdminTravelService {
         Response<ArrayList<AdminTrip>> result;
         ArrayList<AdminTrip> trips = new ArrayList<>();
 
-        AdminTravelServiceImpl.LOGGER.info("[getAllTravels][Get All Travels]");
+        AdminTravelServiceImpl.LOGGER.info("[getAllTravels][Gathering trips for the admin listing]");
         HttpEntity requestEntity = new HttpEntity(headers);
         String travel_service_url = getServiceUrl("ts-travel-service");
         ResponseEntity<Response<ArrayList<AdminTrip>>> re = restTemplate.exchange(
@@ -77,7 +77,7 @@ public class AdminTravelServiceImpl implements AdminTravelService {
             ArrayList<AdminTrip> adminTrips = result.getData();
             trips.addAll(adminTrips);
         } else {
-            AdminTravelServiceImpl.LOGGER.error("[getAllTravels][receive response][Get Travel From ts-travel2-service fail!]");
+            AdminTravelServiceImpl.LOGGER.error("[getAllTravels][ts-travel2-service did not return a successful trip response]");
         }
         result.setData(trips);
 
@@ -147,11 +147,11 @@ public class AdminTravelServiceImpl implements AdminTravelService {
 
         result = re.getBody();
         if (result.getStatus() != 1)  {
-            AdminTravelServiceImpl.LOGGER.info("[updateTravel][Admin update travel failed]");
+            AdminTravelServiceImpl.LOGGER.info("Admin trip update did not succeed (updateTravel)");
             return new Response<>(0, "Admin update travel failed", null);
         }
 
-        AdminTravelServiceImpl.LOGGER.info("[updateTravel][Admin update travel][success]");
+        AdminTravelServiceImpl.LOGGER.info("Admin trip update completed successfully (updateTravel)");
         return result;
     }
 
@@ -180,7 +180,7 @@ public class AdminTravelServiceImpl implements AdminTravelService {
             return new Response<>(0, "Admin delete travel failed", null);
         }
 
-        AdminTravelServiceImpl.LOGGER.info("[deleteTravel][Admin delete travel success][trip id: {}]", tripId);
+        AdminTravelServiceImpl.LOGGER.info("Trip {} deleted by admin", tripId);
         return result;
     }
 
@@ -268,7 +268,7 @@ public class AdminTravelServiceImpl implements AdminTravelService {
     }
 
     private Route getRouteByRouteId(String routeId, HttpHeaders headers) {
-        AdminTravelServiceImpl.LOGGER.info("[getRouteByRouteId][Get Route By Id][Route ID：{}]", routeId);
+        AdminTravelServiceImpl.LOGGER.info("[getRouteByRouteId][Route lookup][routeId={}]", routeId);
         HttpEntity requestEntity = new HttpEntity(null);
         String route_service_url=getServiceUrl("ts-route-service");
         ResponseEntity<Response> re = restTemplate.exchange(
@@ -278,7 +278,7 @@ public class AdminTravelServiceImpl implements AdminTravelService {
                 Response.class);
         Response result = re.getBody();
         if ( result.getStatus() == 0) {
-            AdminTravelServiceImpl.LOGGER.warn("[getRouteByRouteId][Get Route By Id Failed][Fail msg: {}]", result.getMsg());
+            AdminTravelServiceImpl.LOGGER.warn("[getRouteByRouteId][Route service lookup failed][reason: {}]", result.getMsg());
             return null;
         } else {
             AdminTravelServiceImpl.LOGGER.info("[getRouteByRouteId][Get Route By Id][Success]");

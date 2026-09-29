@@ -31,7 +31,7 @@ public class RebookController {
     @PostMapping(value = "/rebook/difference")
     public HttpEntity payDifference(@RequestBody RebookInfo info,
                                     @RequestHeader HttpHeaders headers) {
-        RebookController.LOGGER.info("[payDifference][Pay difference][OrderId: {}]",info.getOrderId());
+        RebookController.LOGGER.info("[payDifference][Fare-difference payment request][orderId={}]",info.getOrderId());
         return ok(service.payDifference(info, headers));
     }
 

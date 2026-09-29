@@ -30,13 +30,13 @@ public class InsidePaymentController {
 
     @PostMapping(value = "/inside_payment")
     public HttpEntity pay(@RequestBody PaymentInfo info, @RequestHeader HttpHeaders headers) {
-        InsidePaymentController.LOGGER.info("[pay][Inside Payment Service.Pay][Pay for: {}]", info.getOrderId());
+        InsidePaymentController.LOGGER.info("[pay][Internal payment request][orderId={}]", info.getOrderId());
         return ok(service.pay(info, headers));
     }
 
     @PostMapping(value = "/inside_payment/account")
     public HttpEntity createAccount(@RequestBody AccountInfo info, @RequestHeader HttpHeaders headers) {
-        LOGGER.info("[createAccount][Create account][accountInfo: {}]", info);
+        LOGGER.info("[createAccount] Account creation requested with details: {}", info);
         return ok(service.createAccount(info, headers));
     }
 
@@ -49,13 +49,13 @@ public class InsidePaymentController {
 
     @GetMapping(value = "/inside_payment/payment")
     public HttpEntity queryPayment(@RequestHeader HttpHeaders headers) {
-        LOGGER.info("[queryPayment][query payment]");
+        LOGGER.info("Payment query requested (queryPayment)");
         return ok(service.queryPayment(headers));
     }
 
     @GetMapping(value = "/inside_payment/account")
     public HttpEntity queryAccount(@RequestHeader HttpHeaders headers) {
-        LOGGER.info("[queryAccount][query account]");
+        LOGGER.info("[queryAccount][Account query received]");
         return ok(service.queryAccount(headers));
     }
 
@@ -67,7 +67,7 @@ public class InsidePaymentController {
 
     @PostMapping(value = "/inside_payment/difference")
     public HttpEntity payDifference(@RequestBody PaymentInfo info, @RequestHeader HttpHeaders headers) {
-        LOGGER.info("[payDifference][pay difference]");
+        LOGGER.info("[payDifference] Fare-difference payment requested");
         return ok(service.payDifference(info, headers));
     }
 

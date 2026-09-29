@@ -49,7 +49,7 @@ public class ContactsServiceImpl implements ContactsService {
     public Response createContacts(Contacts contacts, HttpHeaders headers) {
         Contacts contactsTemp = contactsRepository.findByAccountIdAndDocumentTypeAndDocumentType(contacts.getAccountId(), contacts.getDocumentNumber(), contacts.getDocumentType());
         if (contactsTemp != null) {
-            ContactsServiceImpl.LOGGER.warn("[createContacts][Init Contacts, Already Exists][Id: {}]", contacts.getId());
+            ContactsServiceImpl.LOGGER.warn("[createContacts][Contact already exists; initialization skipped][contactId: {}]", contacts.getId());
             return new Response<>(0, "Already Exists", contactsTemp);
         } else {
             contactsRepository.save(contacts);
@@ -77,10 +77,10 @@ public class ContactsServiceImpl implements ContactsService {
         contactsRepository.deleteById(contactsId);
         Contacts contacts = contactsRepository.findById(contactsId).orElse(null);
         if (contacts == null) {
-            ContactsServiceImpl.LOGGER.info("[Contacts-Add&Delete-Service][DeleteContacts Success]");
+            ContactsServiceImpl.LOGGER.info("Contact deletion completed successfully");
             return new Response<>(1, "Delete success", contactsId);
         } else {
-            ContactsServiceImpl.LOGGER.error("[Contacts-Add&Delete-Service][DeleteContacts][Fail.Reason not clear][contactsId: {}]", contactsId);
+            ContactsServiceImpl.LOGGER.error("[delete] Contact {} still exists after deletion", contactsId);
             return new Response<>(0, "Delete failed", contactsId);
         }
     }
@@ -92,7 +92,7 @@ public class ContactsServiceImpl implements ContactsService {
         LOGGER.info(oldContactResponse.toString());
         Contacts oldContacts = (Contacts) oldContactResponse.getData();
         if (oldContacts == null) {
-            ContactsServiceImpl.LOGGER.error("[Contacts-Modify-Service.modify][ModifyContacts][Fail.Contacts not found][contactId: {}]", contacts.getId());
+            ContactsServiceImpl.LOGGER.error("[modify][Cannot update contact: record not found][contactId={}]", contacts.getId());
             return new Response<>(0, "Contacts not found", null);
         } else {
             oldContacts.setName(contacts.getName());
@@ -100,7 +100,7 @@ public class ContactsServiceImpl implements ContactsService {
             oldContacts.setDocumentNumber(contacts.getDocumentNumber());
             oldContacts.setPhoneNumber(contacts.getPhoneNumber());
             contactsRepository.save(oldContacts);
-            ContactsServiceImpl.LOGGER.info("[Contacts-Modify-Service.modify][ModifyContacts Success]");
+            ContactsServiceImpl.LOGGER.info("Contact changes saved (modify)");
             return new Response<>(1, "Modify success", oldContacts);
         }
     }

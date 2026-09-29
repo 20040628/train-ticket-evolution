@@ -104,7 +104,7 @@ public class VerifyCodeServiceImpl implements VerifyCodeService {
                 cookieId = cookie.getValue();
             }
         }
-        VerifyCodeServiceImpl.LOGGER.info("[getImageCode][strEnsure: {}]", strEnsure);
+        VerifyCodeServiceImpl.LOGGER.info("[getImageCode][Generated verification code: {}]", strEnsure);
         cacheCode.put(cookieId, strEnsure);
         return returnMap;
     }

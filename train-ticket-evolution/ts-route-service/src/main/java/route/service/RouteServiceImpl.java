@@ -37,7 +37,7 @@ public class RouteServiceImpl implements RouteService {
         List<String> stationList = new ArrayList<>();
         List<Integer> distanceList = new ArrayList<>();
         if (stations.length != distances.length) {
-            RouteServiceImpl.LOGGER.error("[createAndModify][Create and modify error][Station number not equal to distance number][RouteId: {}]",info.getId());
+            RouteServiceImpl.LOGGER.error("[createAndModify][Cannot save route: station and distance counts differ][routeId={}]",info.getId());
             return new Response<>(0, "Station Number Not Equal To Distance Number", null);
         }
         for (int i = 0; i < stations.length; i++) {
@@ -93,7 +93,7 @@ public class RouteServiceImpl implements RouteService {
     public Response getRouteByIds(List<String> routeIds, HttpHeaders headers) {
         List<Route> routes = routeRepository.findByIds(routeIds);
         if (routes == null || routes.isEmpty()) {
-            RouteServiceImpl.LOGGER.error("[getRouteById][Find route error][Route not found][RouteIds: {}]",routeIds);
+            RouteServiceImpl.LOGGER.error("No routes found for IDs {} (getRouteByIds)",routeIds);
             return new Response<>(0, "No content with the routeIds", null);
         } else {
             return new Response<>(1, success, routes);
@@ -103,7 +103,7 @@ public class RouteServiceImpl implements RouteService {
     @Override
     public Response getRouteByStartAndEnd(String startId, String terminalId, HttpHeaders headers) {
         ArrayList<Route> routes = routeRepository.findAll();
-        RouteServiceImpl.LOGGER.info("[getRouteByStartAndEnd][Find All][size:{}]", routes.size());
+        RouteServiceImpl.LOGGER.info("[getRouteByStartAndEnd] Scanning {} routes for matching endpoints", routes.size());
         List<Route> resultList = new ArrayList<>();
         for (Route route : routes) {
             if (route.getStations().contains(startId) &&
@@ -126,7 +126,7 @@ public class RouteServiceImpl implements RouteService {
         if (routes != null && !routes.isEmpty()) {
             return new Response<>(1, success, routes);
         } else {
-            RouteServiceImpl.LOGGER.warn("[getAllRoutes][Find all routes warn][{}]","No Content");
+            RouteServiceImpl.LOGGER.warn("[getAllRoutes][Route list is empty][detail: {}]","No Content");
             return new Response<>(0, "No Content", null);
         }
     }

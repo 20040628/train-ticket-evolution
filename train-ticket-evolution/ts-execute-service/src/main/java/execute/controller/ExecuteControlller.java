@@ -30,7 +30,7 @@ public class ExecuteControlller {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/execute/execute/{orderId}")
     public HttpEntity executeTicket(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        ExecuteControlller.LOGGER.info("[executeTicket][Execute][Id: {}]", orderId);
+        ExecuteControlller.LOGGER.info("[executeTicket][Ticket execution requested][orderId: {}]", orderId);
         // null
         return ok(executeService.ticketExecute(orderId, headers));
     }

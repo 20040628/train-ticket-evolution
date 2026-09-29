@@ -53,7 +53,7 @@ public class BasicServiceImpl implements BasicService {
             response.setStatus(0);
             response.setMsg("Start place or end place not exist!");
             if (!startingPlaceExist)
-                BasicServiceImpl.LOGGER.warn("[queryForTravel][Start place not exist][start place: {}]", info.getStartPlace());
+                BasicServiceImpl.LOGGER.warn("Departure station '{}' does not exist", info.getStartPlace());
             if (!endPlaceExist)
                 BasicServiceImpl.LOGGER.warn("[queryForTravel][End place not exist][end place: {}]", info.getEndPlace());
         }
@@ -87,7 +87,7 @@ public class BasicServiceImpl implements BasicService {
                 route.getStations().indexOf(start) < route.getStations().indexOf(end)){
             indexStart = route.getStations().indexOf(start);
             indexEnd = route.getStations().indexOf(end);
-            LOGGER.info("[queryForTravel][query start index and end index][indexStart: {} indexEnd: {}]", indexStart, indexEnd);
+            LOGGER.info("[queryForTravel] Route positions: startIndex={}, endIndex={}", indexStart, indexEnd);
             LOGGER.info("[queryForTravel][query stations and distances][stations: {} distances: {}]", route.getStations(), route.getDistances());
         }else {
             result.setStatus(false);
@@ -316,7 +316,7 @@ public class BasicServiceImpl implements BasicService {
             trMap.put(tripNumber, result);
         }
         response.setData(trMap);
-        BasicServiceImpl.LOGGER.info("[queryForTravels][all done][result map: {}]", trMap);
+        BasicServiceImpl.LOGGER.info("Travel batch completed; results={}", trMap);
         return response;
     }
 
@@ -401,7 +401,7 @@ public class BasicServiceImpl implements BasicService {
     }
 
     private List<Route> getRoutesByRouteIds(List<String> routeIds, HttpHeaders headers) {
-        BasicServiceImpl.LOGGER.info("[getRoutesByRouteIds][Get Route By Ids][Route IDs：{}]", routeIds);
+        BasicServiceImpl.LOGGER.info("[getRoutesByRouteIds][Batch route lookup][routeIds: {}]", routeIds);
         HttpEntity requestEntity = new HttpEntity(routeIds, null);
         String route_service_url=getServiceUrl("ts-route-service");
         ResponseEntity<Response> re = restTemplate.exchange(
@@ -411,7 +411,7 @@ public class BasicServiceImpl implements BasicService {
                 Response.class);
         Response<List<Route>> result = re.getBody();
         if ( result.getStatus() == 0) {
-            BasicServiceImpl.LOGGER.warn("[getRoutesByRouteIds][Get Route By Ids Failed][Fail msg: {}]", result.getMsg());
+            BasicServiceImpl.LOGGER.warn("Route batch lookup failed: {} [getRoutesByRouteIds]", result.getMsg());
             return null;
         } else {
             BasicServiceImpl.LOGGER.info("[getRoutesByRouteIds][Get Route By Ids][Success]");
@@ -440,7 +440,7 @@ public class BasicServiceImpl implements BasicService {
     }
 
     private PriceConfig queryPriceConfigByRouteIdAndTrainType(String routeId, String trainType, HttpHeaders headers) {
-        BasicServiceImpl.LOGGER.info("[queryPriceConfigByRouteIdAndTrainType][Query For Price Config][RouteId: {} ,TrainType: {}]", routeId, trainType);
+        BasicServiceImpl.LOGGER.info("[queryPriceConfigByRouteIdAndTrainType] Finding a price for route {} and train type {}", routeId, trainType);
         HttpEntity requestEntity = new HttpEntity(null, null);
         String price_service_url=getServiceUrl("ts-price-service");
         ResponseEntity<Response> re = restTemplate.exchange(
@@ -477,7 +477,7 @@ public class BasicServiceImpl implements BasicService {
                 BasicServiceImpl.LOGGER.warn("[queryPriceConfigByRouteIdsAndTrainTypes][Get Price Config by routeId and trainType Failed][Fail msg: {}]", e.getMessage());
                 return null;
             }
-            BasicServiceImpl.LOGGER.info("[queryPriceConfigByRouteIdsAndTrainTypes][Get Price Config by routeId and trainType][Success][priceConfigs: {}]", result.getData());
+            BasicServiceImpl.LOGGER.info("[queryPriceConfigByRouteIdsAndTrainTypes][Price configuration lookup succeeded][priceConfigs: {}]", result.getData());
             return pcMap;
         }
     }

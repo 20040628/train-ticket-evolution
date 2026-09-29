@@ -64,7 +64,7 @@ public class PreserveServiceImpl implements PreserveService {
             PreserveServiceImpl.LOGGER.error("[preserve][Step 2][Find Contacts Fail][ContactsId: {},message: {}]",oti.getContactsId(),gcr.getMsg());
             return new Response<>(0, gcr.getMsg(), null);
         }
-        PreserveServiceImpl.LOGGER.info("[preserve][Step 2][Find contacts Complete][ContactsId: {}]",oti.getContactsId());
+        PreserveServiceImpl.LOGGER.info("[preserve][Step 2][Contact lookup completed][contactId={}]",oti.getContactsId());
         //3.Check the info of train and the number of remaining tickets
         //PreserveServiceImpl.LOGGER.info("[Step 3] Check tickets num");
         TripAllDetailInfo gtdi = new TripAllDetailInfo();
@@ -91,7 +91,7 @@ public class PreserveServiceImpl implements PreserveService {
                 }
             } else {
                 if (tripResponse.getEconomyClass() == SeatClass.SECONDCLASS.getCode() && tripResponse.getConfortClass() == 0) {
-                    PreserveServiceImpl.LOGGER.warn("[preserve][Step 3][Check seat][Check seat is Not enough][TripId: {}]",oti.getTripId());
+                    PreserveServiceImpl.LOGGER.warn("[preserve] Seat availability is insufficient [tripId={}; step=3]",oti.getTripId());
                     return new Response<>(0, "Seat Not Enough", null);
                 }
             }
@@ -165,11 +165,11 @@ public class PreserveServiceImpl implements PreserveService {
             order.setPrice(resultForTravel.getPrices().get("economyClass"));
         }
 
-        PreserveServiceImpl.LOGGER.info("[preserve][Step 4][Do Order][Order Price][Price is: {}]", order.getPrice());
+        PreserveServiceImpl.LOGGER.info("Booking order price: {} (step 4)", order.getPrice());
 
         Response<Order> cor = createOrder(order, headers);
         if (cor.getStatus() == 0) {
-            PreserveServiceImpl.LOGGER.error("[preserve][Step 4][Do Order][Create Order Fail][OrderId: {},  Reason: {}]", order.getId(), cor.getMsg());
+            PreserveServiceImpl.LOGGER.error("[preserve][Order creation failed] orderId={}, reason={}", order.getId(), cor.getMsg());
             return new Response<>(0, cor.getMsg(), null);
         }
         PreserveServiceImpl.LOGGER.info("[preserve][Step 4][Do Order][Do Order Complete]");
@@ -177,7 +177,7 @@ public class PreserveServiceImpl implements PreserveService {
         Response returnResponse = new Response<>(1, "Success.", cor.getMsg());
         //5.Check insurance options
         if (oti.getAssurance() == 0) {
-            PreserveServiceImpl.LOGGER.info("[preserve][Step 5][Buy Assurance][Do not need to buy assurance]");
+            PreserveServiceImpl.LOGGER.info("[preserve] No assurance selected; purchase omitted");
         } else {
             Response addAssuranceResult = addAssuranceForOrder(
                     oti.getAssurance(), cor.getData().getId().toString(), headers);
@@ -211,7 +211,7 @@ public class PreserveServiceImpl implements PreserveService {
                 returnResponse.setMsg("Success.But Buy Food Fail.");
             }
         } else {
-            PreserveServiceImpl.LOGGER.info("[preserve][Step 6][Buy Food][Do not need to buy food]");
+            PreserveServiceImpl.LOGGER.info("Food purchase not needed for this booking [preserve: step 6]");
         }
 
         //7.add consign
@@ -233,11 +233,11 @@ public class PreserveServiceImpl implements PreserveService {
             if (icresult.getStatus() == 1) {
                 PreserveServiceImpl.LOGGER.info("[preserve][Step 7][Add Consign][Consign Success]");
             } else {
-                PreserveServiceImpl.LOGGER.error("[preserve][Step 7][Add Consign][Preserve Consign Fail][OrderId: {}]", cor.getData().getId());
+                PreserveServiceImpl.LOGGER.error("[preserve][Step 7][Unable to add consign service][orderId={}]", cor.getData().getId());
                 returnResponse.setMsg("Consign Fail.");
             }
         } else {
-            PreserveServiceImpl.LOGGER.info("[preserve][Step 7][Add Consign][Do not need to consign]");
+            PreserveServiceImpl.LOGGER.info("[preserve] Consign step skipped because no consign was requested");
         }
 
         //8.send notification
@@ -299,7 +299,7 @@ public class PreserveServiceImpl implements PreserveService {
     }
 
     public User getAccount(String accountId, HttpHeaders httpHeaders) {
-        PreserveServiceImpl.LOGGER.info("[getAccount][Cancel Order Service][Get Order By Id]");
+        PreserveServiceImpl.LOGGER.info("[getAccount][Loading booking account details from user service]");
 
         HttpEntity requestEntitySendEmail = new HttpEntity(httpHeaders);
         String user_service_url = getServiceUrl("ts-user-service");
@@ -314,7 +314,7 @@ public class PreserveServiceImpl implements PreserveService {
     }
 
     private Response addAssuranceForOrder(int assuranceType, String orderId, HttpHeaders httpHeaders) {
-        PreserveServiceImpl.LOGGER.info("[addAssuranceForOrder][Preserve Service][Add Assurance Type For Order]");
+        PreserveServiceImpl.LOGGER.info("Adding the selected assurance type to the order (addAssuranceForOrder)");
         HttpEntity requestAddAssuranceResult = new HttpEntity(httpHeaders);
         String assurance_service_url = getServiceUrl("ts-assurance-service");
         ResponseEntity<Response> reAddAssuranceResult = restTemplate.exchange(
@@ -327,7 +327,7 @@ public class PreserveServiceImpl implements PreserveService {
     }
 
     private String queryForStationId(String stationName, HttpHeaders httpHeaders) {
-        PreserveServiceImpl.LOGGER.info("[queryForStationId][Preserve Other Service][Get Station By  Name]");
+        PreserveServiceImpl.LOGGER.info("[queryForStationId] Resolving a station ID from its name");
 
 
         HttpEntity requestQueryForStationId = new HttpEntity(httpHeaders);
@@ -343,7 +343,7 @@ public class PreserveServiceImpl implements PreserveService {
     }
 
     private Response checkSecurity(String accountId, HttpHeaders httpHeaders) {
-        PreserveServiceImpl.LOGGER.info("[checkSecurity][Preserve Other Service][Check Account Security]");
+        PreserveServiceImpl.LOGGER.info("[checkSecurity][Requesting the account security check]");
 
         HttpEntity requestCheckResult = new HttpEntity(httpHeaders);
         String security_service_url = getServiceUrl("ts-security-service");
@@ -389,7 +389,7 @@ public class PreserveServiceImpl implements PreserveService {
     }
 
     private Response createOrder(Order coi, HttpHeaders httpHeaders) {
-        PreserveServiceImpl.LOGGER.info("[createOrder][Preserve Service][create order]");
+        PreserveServiceImpl.LOGGER.info("Submitting the booking order to ts-order-service");
 
         HttpEntity requestEntityCreateOrderResult = new HttpEntity(coi, httpHeaders);
         String order_service_url = getServiceUrl("ts-order-service");

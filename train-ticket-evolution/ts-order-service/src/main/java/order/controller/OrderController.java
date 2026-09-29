@@ -36,7 +36,7 @@ public class OrderController {
 
     @PostMapping(value = "/order/tickets")
     public HttpEntity getTicketListByDateAndTripId(@RequestBody Seat seatRequest, @RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[getSoldTickets][Get Sold Ticket][Travel Date: {}]", seatRequest.getTravelDate().toString());
+        OrderController.LOGGER.info("Sold-ticket lookup requested for travel date {}", seatRequest.getTravelDate().toString());
         return ok(orderService.getSoldTickets(seatRequest, headers));
     }
 
@@ -73,7 +73,7 @@ public class OrderController {
     @GetMapping(path = "/order/{travelDate}/{trainNumber}")
     public HttpEntity calculateSoldTicket(@PathVariable String travelDate, @PathVariable String trainNumber,
                                           @RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[queryAlreadySoldOrders][Calculate Sold Tickets][Date: {} TrainNumber: {}]", travelDate, trainNumber);
+        OrderController.LOGGER.info("[calculateSoldTicket] Counting sold tickets [travelDate={}, trainNumber={}]", travelDate, trainNumber);
         return ok(orderService.queryAlreadySoldOrders(StringUtils.String2Date(travelDate), trainNumber, headers));
     }
 
@@ -89,7 +89,7 @@ public class OrderController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/order/orderPay/{orderId}")
     public HttpEntity payOrder(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[payOrder][Pay Order][OrderId: {}]", orderId);
+        OrderController.LOGGER.info("[payOrder] Payment requested for order {}", orderId);
         // Order
         return ok(orderService.payOrder(orderId, headers));
     }
@@ -97,7 +97,7 @@ public class OrderController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/order/{orderId}")
     public HttpEntity getOrderById(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[getOrderById][Get Order By Id][OrderId: {}]", orderId);
+        OrderController.LOGGER.info("Order details requested [orderId={}]", orderId);
         // Order
         return ok(orderService.getOrderById(orderId, headers));
     }
@@ -105,7 +105,7 @@ public class OrderController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/order/status/{orderId}/{status}")
     public HttpEntity modifyOrder(@PathVariable String orderId, @PathVariable int status, @RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[modifyOrder][Modify Order Status][OrderId: {}]", orderId);
+        OrderController.LOGGER.info("[modifyOrder][Order status change requested][orderId: {}]", orderId);
         // Order
         return ok(orderService.modifyOrder(orderId, status, headers));
     }
@@ -125,7 +125,7 @@ public class OrderController {
     public HttpEntity saveOrderInfo(@RequestBody Order orderInfo,
                                     @RequestHeader HttpHeaders headers) {
 
-        OrderController.LOGGER.info("[saveChanges][Save Order Info][OrderId:{}]",orderInfo.getId());
+        OrderController.LOGGER.info("[saveOrderInfo] Save request received for orderId={}",orderInfo.getId());
         return ok(orderService.saveChanges(orderInfo, headers));
     }
 
@@ -133,7 +133,7 @@ public class OrderController {
     @PutMapping(path = "/order/admin")
     public HttpEntity updateOrder(@RequestBody Order order, @RequestHeader HttpHeaders headers) {
         // Order
-        OrderController.LOGGER.info("[updateOrder][Update Order][OrderId: {}]", order.getId());
+        OrderController.LOGGER.info("Order {}: admin update requested", order.getId());
         return ok(orderService.updateOrder(order, headers));
     }
 
@@ -151,7 +151,7 @@ public class OrderController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/order")
     public HttpEntity findAllOrder(@RequestHeader HttpHeaders headers) {
-        OrderController.LOGGER.info("[getAllOrders][Find All Order]");
+        OrderController.LOGGER.info("[findAllOrder][Complete order list requested]");
         // ArrayList<Order>
         return ok(orderService.getAllOrders(headers));
     }

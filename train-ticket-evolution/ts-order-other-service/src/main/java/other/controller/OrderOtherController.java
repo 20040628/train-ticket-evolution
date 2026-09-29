@@ -46,7 +46,7 @@ public class OrderOtherController {
     @CrossOrigin(origins = "*")
     @PostMapping(path = "/orderOther")
     public HttpEntity createNewOrder(@RequestBody Order createOrder, @RequestHeader HttpHeaders headers) {
-        OrderOtherController.LOGGER.info("[create][Create Order][from {} to {} at {}]", createOrder.getFrom(), createOrder.getTo(), createOrder.getTravelDate());
+        OrderOtherController.LOGGER.info("New order request: {} -> {} on {}", createOrder.getFrom(), createOrder.getTo(), createOrder.getTravelDate());
         return ok(orderService.create(createOrder, headers));
     }
 
@@ -86,14 +86,14 @@ public class OrderOtherController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/orderOther/price/{orderId}")
     public HttpEntity getOrderPrice(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        OrderOtherController.LOGGER.info("[getOrderPrice][Get Order Price][Order Id: {}]", orderId);
+        OrderOtherController.LOGGER.info("[getOrderPrice][Price lookup requested][orderId={}]", orderId);
         return ok(orderService.getOrderPrice(orderId, headers));
     }
 
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/orderOther/orderPay/{orderId}")
     public HttpEntity payOrder(@PathVariable String orderId, @RequestHeader HttpHeaders headers) {
-        OrderOtherController.LOGGER.info("[payOrder][Pay Order][Order Id: {}]", orderId);
+        OrderOtherController.LOGGER.info("Order {}: payment requested", orderId);
         return ok(orderService.payOrder(orderId, headers));
     }
 
@@ -115,7 +115,7 @@ public class OrderOtherController {
     @GetMapping(path = "/orderOther/security/{checkDate}/{accountId}")
     public HttpEntity securityInfoCheck(@PathVariable String checkDate, @PathVariable String accountId,
                                         @RequestHeader HttpHeaders headers) {
-        OrderOtherController.LOGGER.info("[checkSecurityAboutOrder][Security Info Get][CheckDate:{} , AccountId:{}]",checkDate,accountId);
+        OrderOtherController.LOGGER.info("[securityInfoCheck] Querying order security data [checkDate={}, accountId={}]",checkDate,accountId);
         return ok(orderService.checkSecurityAboutOrder(StringUtils.String2Date(checkDate), accountId, headers));
     }
 
@@ -147,7 +147,7 @@ public class OrderOtherController {
     @CrossOrigin(origins = "*")
     @GetMapping(path = "/orderOther")
     public HttpEntity findAllOrder(@RequestHeader HttpHeaders headers) {
-        OrderOtherController.LOGGER.info("[getAllOrders][Find All Order]");
+        OrderOtherController.LOGGER.info("[findAllOrder][Request to list orders]");
         return ok(orderService.getAllOrders(headers));
     }
 

@@ -41,7 +41,7 @@ public class RoutePlanController {
 
     @PostMapping(value = "/routePlan/minStopStations")
     public HttpEntity getMinStopStations(@RequestBody RoutePlanInfo info, @RequestHeader HttpHeaders headers) {
-        RoutePlanController.LOGGER.info("[searchMinStopStations][Get Min Stop Stations][From: {}, To: {}, Num: {}, Date: {}]", info.getStartStation(), info.getEndStation(), info.getNum(), info.getTravelDate());
+        RoutePlanController.LOGGER.info("[getMinStopStations] Fewest-stop route request: {} -> {}, requestedCount={}, date={}", info.getStartStation(), info.getEndStation(), info.getNum(), info.getTravelDate());
         return ok(routePlanService.searchMinStopStations(info, headers));
     }
 
