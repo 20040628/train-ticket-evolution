@@ -43,6 +43,7 @@ mysql:
   configFiles:
     node.cnf: |
       [mysqld]
+      bind-address = 0.0.0.0
       default_storage_engine=InnoDB
       max_connections=65535
 
