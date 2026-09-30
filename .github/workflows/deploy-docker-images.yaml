@@ -1,41 +1,74 @@
-name: Deploy Docker Images
+name: Publish evolution images to GHCR
 
 on:
-  push:
-    tags:
-      - v[0-9]+.[0-9]+.[0-9]+
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Immutable image tag, for example log-evolution-v1-20260930
+        required: true
+        default: log-evolution-v1-20260930
+        type: string
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
-  build-and-deploy:
+  build-and-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 360
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
-        with:
-          distribution: 'adopt'
-          java-version: '8'
-      - name: Cache local Maven repository
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
+      - name: Checkout repository
+        uses: actions/checkout@v7
 
-      - uses: docker/login-action@v1
+      - name: Set up Java 8
+        uses: actions/setup-java@v6
         with:
-          username: ${{ secrets.DOCKER_HUB_USERNAME }}
-          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
-      - uses: docker/setup-buildx-action@v1
-        with:
-          install: true
-      - name: Cache Docker layers
-        uses: actions/cache@v2
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: |
-            ${{ runner.os }}-buildx-
+          distribution: temurin
+          java-version: "8"
+          cache: maven
+          cache-dependency-path: "**/pom.xml"
 
-      - run: make package publish-image Repo=${{ secrets.DOCKER_HUB_USERNAME }} Tag=${GITHUB_REF#refs/tags/v}
+      - name: Package all services
+        run: mvn -B -ntp clean package -Dmaven.test.skip=true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push 46 service images
+        env:
+          IMAGE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+
+          owner=$(printf '%s' "$GITHUB_REPOSITORY_OWNER" | tr '[:upper:]' '[:lower:]')
+          source_url="https://github.com/${GITHUB_REPOSITORY}"
+          built=0
+
+          for service_dir in ts-*; do
+            if [ -d "$service_dir" ] && find "$service_dir" -maxdepth 1 -iname 'Dockerfile' -print -quit | grep -q .; then
+              image="ghcr.io/${owner}/${service_dir}:${IMAGE_TAG}"
+              echo "Building ${image}"
+              docker buildx build \
+                --platform linux/amd64 \
+                --label "org.opencontainers.image.source=${source_url}" \
+                --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+                --tag "$image" \
+                --push \
+                "$service_dir"
+              built=$((built + 1))
+            fi
+          done
+
+          if [ "$built" -ne 46 ]; then
+            echo "Expected 46 images, but built ${built}." >&2
+            exit 1
+          fi

@@ -4,7 +4,7 @@
 
 本指南用于完成以下目标：
 
-- 将 `train-ticket-evolution` 的源码保存到 GitHub 仓库 `20040628/train-ticket-myself`。
+- 使用已经独立并推送完成的 GitHub 仓库 `20040628/train-ticket-evolution`。
 - 使用 GitHub Actions 编译项目并构建 46 个业务镜像。
 - 将镜像发布到 GitHub Container Registry（GHCR）。
 - 将 GHCR 镜像设置为公开，使 Kubernetes 节点无须镜像凭据即可拉取。
@@ -46,7 +46,7 @@ ghcr.io/20040628/ts-gateway-service:log-evolution-v1-20260930
 
 ### 2.1 GitHub 侧
 
-- GitHub 仓库：`https://github.com/20040628/train-ticket-myself`
+- GitHub 仓库：`https://github.com/20040628/train-ticket-evolution`
 - 账号对该仓库具有写权限。
 - 仓库允许运行 GitHub Actions。
 - Actions 的工作流权限允许写入 GitHub Packages：仓库 `Settings` → `Actions` → `General` → `Workflow permissions`。工作流本身也会声明 `packages: write`。
@@ -87,14 +87,15 @@ helm version
 containerd://1.x.x
 ```
 
-## 3. 上传源码到 GitHub
+## 3. 确认独立仓库与远程地址
 
-源码直接按照现有文件夹结构使用 Git 提交，不要压缩成 ZIP，也不要执行 `docker save` 后把 tar 文件提交进仓库。
+当前目录已经是独立的 `train-ticket-evolution` Git 仓库，源码也已经推送到 GitHub。后续不需要压缩成 ZIP，也不要执行 `docker save` 后把 tar 文件提交进源码仓库。
 
-建议先检查：
+先确认当前目录和远程地址：
 
 ```bash
-cd train-ticket-myself
+cd train-ticket-evolution
+git rev-parse --show-toplevel
 git remote -v
 git status --short
 ```
@@ -102,7 +103,15 @@ git status --short
 当前项目的远程仓库应为：
 
 ```text
-https://github.com/20040628/train-ticket-myself.git
+https://github.com/20040628/train-ticket-evolution.git
+```
+
+如果 `git remote -v` 仍显示旧地址 `train-ticket-myself.git`，GitHub 可能暂时通过仓库重命名跳转处理访问，但建议显式更新本地地址：
+
+```bash
+git remote set-url origin https://github.com/20040628/train-ticket-evolution.git
+git remote -v
+git fetch origin
 ```
 
 不要提交以下内容：
@@ -113,27 +122,28 @@ https://github.com/20040628/train-ticket-myself.git
 - kubeconfig、Token、密码、私钥
 - 仅供本地 AI 对话交接使用的文件，除非确认需要公开
 
-在确认变更后提交源码。示例：
+后续修改直接在当前仓库根目录提交。示例：
 
 ```bash
-git add -u train-ticket-evolution
-git add train-ticket-evolution/README_GHCR_CONTAINERD_DEPLOYMENT.md
-git commit -m "add isolated evolution deployment and GHCR guide"
+git add README_GHCR_CONTAINERD_DEPLOYMENT.md
+git commit -m "update GHCR and containerd deployment guide"
 git push origin main
 ```
 
 不要直接使用 `git add .`，避免把 `.idea/` 或其他本地文件意外提交。
 
-## 4. 创建 GitHub Actions 镜像发布工作流
+## 4. 将现有 Docker 镜像工作流改造成 GHCR 工作流
 
 GitHub 只识别仓库根目录下的 `.github/workflows/`。
 
-本仓库中的演化项目位于子目录，因此：
+当前仓库已经是独立仓库，因此现有文件已经处于正确位置：
 
-- `train-ticket-evolution/.github/workflows/` 中的旧工作流不会被当前父仓库直接执行。
-- 应在仓库根目录创建 `.github/workflows/publish-evolution-images.yml`。
+- `.github/workflows/deploy-docker-images.yaml`：旧版 Docker Hub 镜像发布工作流，可以改造成 GHCR 工作流。
+- `.github/workflows/deploy-maven-packages.yaml`：发布 Maven Package，与 Kubernetes 镜像部署无关，本次不需要执行。
 
-文件内容如下：
+旧 Docker 工作流不能原样使用，因为它登录 Docker Hub、依赖 `DOCKER_HUB_*` Secrets、仅由 `v1.2.3` 形式的 Git Tag 触发，并且使用了较旧的 Actions 版本。
+
+推荐直接用以下内容替换 `.github/workflows/deploy-docker-images.yaml`：
 
 ```yaml
 name: Publish evolution images to GHCR
@@ -156,10 +166,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
 
-    defaults:
-      run:
-        working-directory: train-ticket-evolution
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -170,10 +176,13 @@ jobs:
           distribution: temurin
           java-version: "8"
           cache: maven
-          cache-dependency-path: train-ticket-evolution/**/pom.xml
+          cache-dependency-path: "**/pom.xml"
 
       - name: Package all services
         run: mvn -B -ntp clean package -Dmaven.test.skip=true
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -196,13 +205,13 @@ jobs:
             if [ -d "$service_dir" ] && find "$service_dir" -maxdepth 1 -iname 'Dockerfile' -print -quit | grep -q .; then
               image="ghcr.io/${owner}/${service_dir}:${IMAGE_TAG}"
               echo "Building ${image}"
-              docker build \
+              docker buildx build \
+                --platform linux/amd64 \
                 --label "org.opencontainers.image.source=${source_url}" \
                 --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
                 --tag "$image" \
+                --push \
                 "$service_dir"
-              docker push "$image"
-              docker image rm "$image"
               built=$((built + 1))
             fi
           done
@@ -217,15 +226,16 @@ jobs:
 
 - 工作流只允许手动触发，避免每次普通提交都构建 46 个镜像。
 - 使用仓库自动提供的 `GITHUB_TOKEN`，不需要在仓库中保存个人密码或 PAT。
-- 每构建并推送一个镜像后删除本地镜像，降低 GitHub runner 磁盘压力。
+- Buildx 每构建一个镜像后直接推送到 GHCR，不需要先把全部镜像保存在 runner 的本地 Docker image store 中。
 - `org.opencontainers.image.source` 标签用于把 GHCR Package 与源码仓库关联。
 - 如果 GitHub Actions 构建时间或磁盘不足，可以后续改成分批矩阵构建。
+- 现有 `script/publish-docker-images.sh` 的服务遍历思路仍然可复用；这里在 workflow 中显式使用 `docker buildx build --push`，避免旧脚本依赖 `docker build --push` 的兼容行为。
 
-将工作流提交到 GitHub：
+提交修改后的工作流：
 
 ```bash
-git add .github/workflows/publish-evolution-images.yml
-git commit -m "add GHCR publishing workflow"
+git add .github/workflows/deploy-docker-images.yaml
+git commit -m "publish evolution images to GHCR"
 git push origin main
 ```
 
@@ -233,7 +243,7 @@ git push origin main
 
 1. 打开仓库页面。
 2. 进入 `Actions`。
-3. 选择 `Publish evolution images to GHCR`。
+3. 选择 `Publish evolution images to GHCR`（文件为 `.github/workflows/deploy-docker-images.yaml`）。
 4. 点击 `Run workflow`。
 5. 输入一个不可变标签，例如：
 
@@ -329,7 +339,8 @@ kubectl delete pod ghcr-pull-test -n train-evolution
 在能够访问 Kubernetes 集群的部署控制机上：
 
 ```bash
-cd train-ticket-myself/train-ticket-evolution
+git clone https://github.com/20040628/train-ticket-evolution.git
+cd train-ticket-evolution
 
 make deploy \
   Namespace=train-evolution \
@@ -476,7 +487,7 @@ log-evolution-v2-20261001
 只清理演化环境：
 
 ```bash
-cd train-ticket-myself/train-ticket-evolution
+cd train-ticket-evolution
 make reset-deploy Namespace=train-evolution
 ```
 
@@ -525,8 +536,8 @@ kubectl patch serviceaccount default \
 
 ## 15. 最终执行清单
 
-- [ ] 源码已推送到 `20040628/train-ticket-myself`。
-- [ ] 工作流位于仓库根目录 `.github/workflows/publish-evolution-images.yml`。
+- [x] 源码已推送到 `20040628/train-ticket-evolution`。
+- [ ] 已将仓库根目录 `.github/workflows/deploy-docker-images.yaml` 改造成 GHCR 工作流。
 - [ ] Actions 使用 Java 8 成功完成 Maven 打包。
 - [ ] Actions 成功发布全部 46 个业务镜像。
 - [ ] 部署使用唯一且非 `latest` 的标签。
