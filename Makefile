@@ -35,12 +35,12 @@ publish-image:
 # DeployArgs "--all"               : deploy train-ticket with mysql cluster each service
 .PHONY: deploy
 deploy:
-	@hack/deploy/deploy.sh "$(Namespace)" "$(DeployArgs)" "$(Repo)" "$(Tag)"
+	@bash hack/deploy/deploy.sh "$(Namespace)" "$(DeployArgs)" "$(Repo)" "$(Tag)"
 
 # deploy
 .PHONY: reset-deploy
 reset-deploy:
-	@hack/deploy/reset.sh "$(Namespace)"
+	@bash hack/deploy/reset.sh "$(Namespace)"
 
 .PHONY: clean
 clean:

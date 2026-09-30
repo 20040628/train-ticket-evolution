@@ -1,4 +1,4 @@
-# Train Ticket 演化版：发布公开镜像并部署到 containerd Kubernetes
+# Train Ticket 演化版：发布 GHCR 镜像并部署到 containerd Kubernetes
 
 最后核对日期：2026-09-30
 
@@ -7,7 +7,7 @@
 - 使用已经独立并推送完成的 GitHub 仓库 `20040628/train-ticket-evolution`。
 - 使用 GitHub Actions 编译项目并构建 46 个业务镜像。
 - 将镜像发布到 GitHub Container Registry（GHCR）。
-- 将 GHCR 镜像设置为公开，使 Kubernetes 节点无须镜像凭据即可拉取。
+- 根据使用范围选择 GHCR Public 匿名拉取，或保持 Private 并通过 Kubernetes Secret 拉取。
 - 在远程、多节点、运行时为 containerd 的 Kubernetes 集群中，将演化版部署到 `train-evolution` namespace。
 - 保留演化前版本在 `train` namespace 中继续运行。
 
@@ -18,7 +18,7 @@
 ```text
 GitHub 源码仓库
   └─ GitHub Actions：Maven 编译 + Docker/OCI 镜像构建
-       └─ GHCR 公开镜像：ghcr.io/20040628/<服务名>:<标签>
+       └─ GHCR Public/Private 镜像：ghcr.io/20040628/<服务名>:<标签>
             └─ Kubernetes kubelet
                  └─ 通过 CRI 请求 containerd 拉取并运行镜像
 ```
@@ -256,7 +256,11 @@ git push origin main
 
 如果失败，先修复失败原因再重新执行；不要在发布不完整时直接部署，否则部分 Pod 会出现 `ImagePullBackOff`。
 
-## 6. 将 GHCR 镜像设置为公开
+## 6. 选择 GHCR 镜像可见性
+
+Public 和 Private 二选一即可。只有自己或自己的 Kubernetes 集群使用时，建议选择 6.2，让镜像保持 Private。
+
+### 6.1 将 GHCR 镜像设置为 Public
 
 GHCR Package 第一次发布后通常是私有的。对于本指南的“公开拉取”方案，需要将每个业务镜像设为 Public。
 
@@ -280,9 +284,113 @@ docker pull ghcr.io/20040628/ts-user-service:log-evolution-v1-20260930
 
 如果本机没有 Docker，可以直接在 containerd 节点使用 `crictl` 验证，见下一节。
 
+### 6.2 保持 GHCR 镜像为 Private
+
+如果镜像只有自己使用，不需要将 Package 改为 Public。GitHub 源码仓库和 GHCR Package 的可见性相互独立，即使源码仓库是 Public，镜像仍可以保持 Private。
+
+Private 镜像的 GitHub Actions 构建和推送流程不变；区别只在于 Kubernetes 拉取时必须提供凭据。一个 `ghcr-pull-secret` 可以用于当前账号下的全部 46 个业务镜像，containerd 不需要单独执行 `docker login` 或修改 Registry 配置。
+
+#### 6.2.1 创建只读 GitHub Token
+
+在 GitHub 中进入 `Settings` → `Developer settings` → `Personal access tokens` → `Tokens (classic)`，创建一个 Token：
+
+- Token 名称（Note）建议填写 `train-evolution-packages`。这个名称只用于在 GitHub 页面中识别 Token，不参与认证。
+- 权限只选择 `read:packages`。
+- 设置合适的过期时间，并在到期前更新 Kubernetes Secret。
+- 保存生成的 Token 值。不要将它写入 README、YAML、脚本或 Git 仓库。
+
+#### 6.2.2 在 `train-evolution` 中创建拉取凭据
+
+以下命令在可以访问集群的 Linux Bash 终端中执行：
+
+```bash
+kubectl create namespace train-evolution --dry-run=client -o yaml | kubectl apply -f -
+
+read -s -p "请输入 GHCR Token: " GHCR_PAT
+echo
+
+kubectl create secret docker-registry ghcr-pull-secret \
+  --namespace train-evolution \
+  --docker-server=ghcr.io \
+  --docker-username=20040628 \
+  --docker-password="$GHCR_PAT" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+unset GHCR_PAT
+```
+
+其中：
+
+- `train-evolution-evolution` 是 GitHub 页面中的 Token 名称。
+- `GHCR_PAT` 是当前终端中的临时变量名，可以换成其他名字。
+- `ghcr-pull-secret` 是 Kubernetes Secret 名称，后续 ServiceAccount 会引用它。
+- 执行 `read -s` 后粘贴 Token 并按回车；输入内容不显示属于正常现象。
+- `unset GHCR_PAT` 会在 Secret 创建完成后清除终端变量。
+
+Secret 只在所属 Kubernetes namespace 中有效，因此必须创建在 `train-evolution`，不要创建到 `default` 或演化前版本所在的 `train`。
+
+#### 6.2.3 让业务 Pod 自动使用凭据
+
+当前业务 Deployment 没有指定自定义 ServiceAccount，会使用 `train-evolution` 中的默认 ServiceAccount。将 Secret 绑定到它：
+
+```bash
+kubectl patch serviceaccount default \
+  --namespace train-evolution \
+  --type merge \
+  --patch '{"imagePullSecrets":[{"name":"ghcr-pull-secret"}]}'
+```
+
+验证 Secret 和 ServiceAccount：
+
+```bash
+kubectl get secret ghcr-pull-secret \
+  --namespace train-evolution \
+  -o jsonpath='{.type}{"\n"}'
+
+kubectl get serviceaccount default \
+  --namespace train-evolution \
+  -o jsonpath='{.imagePullSecrets}{"\n"}'
+```
+
+输出应分别包含：
+
+```text
+kubernetes.io/dockerconfigjson
+[{"name":"ghcr-pull-secret"}]
+```
+
+#### 6.2.4 通过 Kubernetes 验证 Private 镜像拉取
+
+Secret 和 ServiceAccount 配置完成后，创建一个新 Pod 测试。不要仅以已有 Pod 继续运行为依据，因为节点上可能已有镜像缓存。
+
+```bash
+kubectl delete pod ghcr-private-pull-test \
+  --namespace train-evolution \
+  --ignore-not-found
+
+kubectl run ghcr-private-pull-test \
+  --namespace train-evolution \
+  --image=ghcr.io/20040628/ts-user-service:log-evolution-v1-20260930 \
+  --restart=Never \
+  --command -- sh -c 'java -version'
+
+kubectl get pod ghcr-private-pull-test -n train-evolution -w
+kubectl logs ghcr-private-pull-test -n train-evolution
+kubectl delete pod ghcr-private-pull-test -n train-evolution
+```
+
+如果出现 `ImagePullBackOff`，使用下面的命令检查事件，并确认 Token 尚未过期、具有 `read:packages` 权限，而且账号 `20040628` 对 Package 有读取权限：
+
+```bash
+kubectl describe pod ghcr-private-pull-test -n train-evolution
+kubectl get events -n train-evolution --sort-by=.lastTimestamp
+```
+
+完成以上配置后，第 8 节的 `make deploy` 命令无需变化。
+
 ## 7. 验证 containerd 节点能够访问 GHCR
 
-GHCR 使用标准 HTTPS 和 OCI Registry API。对于公开 GHCR，正常情况下不需要修改 containerd 配置。
+GHCR 使用标准 HTTPS 和 OCI Registry API。Public 镜像可以匿名拉取；Private 镜像由 Kubernetes `imagePullSecret` 提供认证。两种方案正常情况下都不需要修改 containerd 配置。
 
 ### 7.1 检查网络
 
@@ -294,9 +402,9 @@ curl -I https://ghcr.io/v2/
 
 返回 `401 Unauthorized` 也能说明网络和 TLS 已连通；Registry 根端点要求认证是正常行为，公开镜像的具体 manifest/layer 仍可匿名拉取。
 
-### 7.2 使用 CRI 拉取测试
+### 7.2 使用 CRI 匿名拉取测试（仅 Public）
 
-在一个工作节点上执行：
+选择 6.1 Public 方案时，在一个工作节点上执行：
 
 ```bash
 sudo crictl info
@@ -306,6 +414,8 @@ sudo crictl images | grep ts-user-service
 
 `crictl` 通过 CRI 与 Kubernetes 使用的 containerd 通信，比只使用 `ctr` 更接近 kubelet 的真实拉取路径。
 
+Private 镜像不能使用上述匿名命令验证；选择 6.2 时直接使用 6.2.4 的 Kubernetes Secret 拉取测试。
+
 如果必须使用 `ctr` 排查：
 
 ```bash
@@ -314,9 +424,11 @@ sudo ctr -n k8s.io images pull ghcr.io/20040628/ts-user-service:log-evolution-v1
 
 这里的 `-n k8s.io` 是 containerd namespace，不是 Kubernetes namespace。
 
-只有在使用企业代理、Registry Mirror 或自签名 CA 时，才需要配置 `/etc/containerd/certs.d/ghcr.io/hosts.toml`。不要为了公开 GHCR 主动关闭 TLS 校验。
+只有在使用企业代理、Registry Mirror 或自签名 CA 时，才需要配置 `/etc/containerd/certs.d/ghcr.io/hosts.toml`。不要主动关闭 TLS 校验。
 
 ### 7.3 通过 Kubernetes 做最终拉取测试
+
+选择 6.1 Public 方案时执行下面的匿名拉取测试。选择 6.2 Private 方案时，6.2.4 已经完成带 Secret 的等价测试，不需要重复执行本段。
 
 ```bash
 kubectl create namespace train-evolution --dry-run=client -o yaml | kubectl apply -f -
@@ -332,7 +444,7 @@ kubectl logs ghcr-pull-test -n train-evolution
 kubectl delete pod ghcr-pull-test -n train-evolution
 ```
 
-只有该测试成功后，再部署完整系统。
+无论选择 Public 还是 Private，都只有在对应的 Kubernetes 拉取测试成功后，再部署完整系统。
 
 ## 8. 部署演化版 Train Ticket
 
@@ -345,7 +457,7 @@ cd train-ticket-evolution
 make deploy \
   Namespace=train-evolution \
   Repo=ghcr.io/20040628 \
-  Tag=log-evolution-v1-20260930 \
+  Tag=log-evolution-v2-20260930 \
   DeployArgs="--with-tracing"
 ```
 
@@ -356,7 +468,7 @@ make deploy \
 3. 将普通与 SkyWalking 两套 Deployment 样例中的业务镜像替换为：
 
    ```text
-   ghcr.io/20040628/<服务名>:log-evolution-v1-20260930
+   ghcr.io/20040628/<服务名>:log-evolution-v2-20260930
    ```
 
 4. 部署带 SkyWalking Agent 的业务服务。
@@ -364,7 +476,7 @@ make deploy \
 6. 保持 Gateway、UI、Nacos 和 SkyWalking UI 为 `ClusterIP`，不占用原 `train` 环境的 NodePort。
 7. 不重复部署集群级 Prometheus/Grafana 清单。
 
-由于镜像是公开的，不需要创建 `imagePullSecret`，也不需要给 Deployment 增加 `imagePullSecrets`。
+如果选择 6.1 的 Public 方案，不需要创建 `imagePullSecret`。如果选择 6.2 的 Private 方案，必须先创建并绑定 `ghcr-pull-secret`；部署命令本身保持不变。
 
 ## 9. 检查部署结果
 
@@ -475,7 +587,7 @@ kubectl get events -n train-evolution --sort-by=.lastTimestamp
 
 常见原因：
 
-- GHCR Package 仍是 Private。
+- GHCR Package 是 Private，但 `ghcr-pull-secret` 缺失、无权限或已经过期。
 - 镜像标签拼写错误。
 - Actions 只发布了部分镜像。
 - 节点不能访问 `ghcr.io:443`。
@@ -532,26 +644,9 @@ kubectl config current-context
 kubectl get pods -n train-evolution
 ```
 
-## 13. 私有 GHCR 的备用方案
+## 13. Private GHCR 凭据维护
 
-如果以后不再公开镜像，可以将 Package 保持 Private，并在 `train-evolution` 中配置拉取凭据。但不要把 Token 写进 YAML 或 Git。
-
-示例：
-
-```bash
-kubectl create secret docker-registry ghcr-pull-secret \
-  --namespace train-evolution \
-  --docker-server=ghcr.io \
-  --docker-username=20040628 \
-  --docker-password='<具有 read:packages 权限的 Token>'
-
-kubectl patch serviceaccount default \
-  --namespace train-evolution \
-  --type merge \
-  --patch '{"imagePullSecrets":[{"name":"ghcr-pull-secret"}]}'
-```
-
-公开镜像方案不需要执行这一节。
+Private 镜像的首次配置和验证见 6.2。Token 到期或被撤销后，使用新的 Token 重新执行 6.2.2 中的 `kubectl create secret ... --dry-run=client -o yaml | kubectl apply -f -` 命令，即可原地更新 `ghcr-pull-secret`。不要删除正在运行的 Pod，直到新的拉取测试成功。
 
 ## 14. 官方文档
 
@@ -573,8 +668,8 @@ kubectl patch serviceaccount default \
 - [ ] Actions 使用 Java 8 成功完成 Maven 打包。
 - [ ] Actions 成功发布全部 46 个业务镜像。
 - [ ] 部署使用唯一且非 `latest` 的标签。
-- [ ] 所有 GHCR Package 已设为 Public。
-- [ ] 未登录状态或 containerd 节点能够拉取测试镜像。
+- [ ] 已选择一种镜像可见性方案：全部 Package 为 Public，或全部保持 Private 并配置 `ghcr-pull-secret`。
+- [ ] Public 匿名拉取测试，或 Private Kubernetes Secret 拉取测试已经成功。
 - [ ] 所有 Kubernetes 节点能够访问 `ghcr.io:443`。
 - [ ] 集群有默认 StorageClass 和足够资源。
 - [ ] 当前 kubeconfig context 已核对。
