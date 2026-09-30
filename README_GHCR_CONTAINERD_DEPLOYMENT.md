@@ -444,7 +444,29 @@ FROM eclipse-temurin:8-jre-jammy
 
 修改后提交并推送代码，然后从包含该提交的分支重新执行一次 `Run workflow`；不要直接对旧运行点击 `Re-run jobs`，因为旧运行仍使用旧提交。这里可以继续使用原标签。当前错误发生在第一个镜像推送之前，不会留下不完整的同标签镜像集合。
 
-### 11.2 `ImagePullBackOff` 或 `ErrImagePull`
+### 11.2 构建时报 `libgl1-mesa-glx has no installation candidate`
+
+`ts-avatar-service` 的旧 Dockerfile 同时存在两个兼容性问题：
+
+- `python:3` 是浮动标签，当前会使用远新于项目依赖的 Python 版本。
+- 新版 Debian 已不再提供 `libgl1-mesa-glx`，OpenGL 兼容运行库应安装 `libgl1`。
+
+仓库已将该服务固定到与现有 Python 依赖兼容的版本，并合并 apt 安装步骤：
+
+```dockerfile
+FROM python:3.9.25-bookworm
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        cmake \
+        libgl1 \
+        libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+工作流逐个推送镜像，因此在 `ts-avatar-service` 失败前可能已经推送了排在它前面的镜像。提交修复后，应从新提交执行一次新的 `Run workflow`，并使用新标签（例如 `log-evolution-v2-20260930`）；完整工作流成功前不要部署该标签。
+
+### 11.3 `ImagePullBackOff` 或 `ErrImagePull`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
@@ -459,19 +481,19 @@ kubectl get events -n train-evolution --sort-by=.lastTimestamp
 - 节点不能访问 `ghcr.io:443`。
 - 节点 DNS、代理或证书配置异常。
 
-### 11.3 `manifest unknown`
+### 11.4 `manifest unknown`
 
 镜像或标签不存在。打开 GitHub Package 页面检查标签，并确认部署命令中的 `Tag` 与 Actions 输入完全一致。
 
-### 11.4 `no matching manifest for linux/arm64`
+### 11.5 `no matching manifest for linux/arm64`
 
 节点是 `arm64`，但当前 Actions 只构建了 `linux/amd64`。需要使用 Buildx 构建多架构镜像，并确认所有基础镜像都支持目标架构。
 
-### 11.5 `x509: certificate signed by unknown authority`
+### 11.6 `x509: certificate signed by unknown authority`
 
 通常是企业 HTTPS 代理或自定义 CA 导致。应将可信 CA 配置到 containerd 的 registry hosts 配置中，不要使用 `skip_verify = true` 作为长期方案。
 
-### 11.6 Pod 一直 `Pending`
+### 11.7 Pod 一直 `Pending`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
@@ -481,7 +503,7 @@ kubectl get storageclass
 
 如果 PVC 为 `Pending`，检查默认 StorageClass 和动态供应器。
 
-### 11.6 重新发布后仍运行旧镜像
+### 11.8 重新发布后仍运行旧镜像
 
 本项目使用 `imagePullPolicy: IfNotPresent`。不要覆盖已使用的标签；每次发布使用新标签，例如：
 

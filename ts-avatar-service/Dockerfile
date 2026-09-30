@@ -1,10 +1,13 @@
-FROM python:3
+FROM python:3.9.25-bookworm
 
 RUN /bin/cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime && echo 'Asia/Shanghai' >/etc/timezone
 
-RUN apt update -y
-RUN apt install -y cmake
-RUN apt install -y libgl1-mesa-glx
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        cmake \
+        libgl1 \
+        libglib2.0-0 \
+    && rm -rf /var/lib/apt/lists/*
 
 ENV PYTHONUNBUFFERED=TRUE
 
