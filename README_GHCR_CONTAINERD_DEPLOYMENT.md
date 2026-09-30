@@ -434,7 +434,17 @@ http://localhost:8082
 
 ## 11. 常见错误与排查
 
-### 11.1 `ImagePullBackOff` 或 `ErrImagePull`
+### 11.1 构建时报 `java:8-jre: not found`
+
+旧版业务 Dockerfile 使用的 `java:8-jre` 标签已经不可用。仓库中的 41 个 Java 服务应统一使用仍在维护的 Eclipse Temurin Java 8 JRE：
+
+```dockerfile
+FROM eclipse-temurin:8-jre-jammy
+```
+
+修改后提交并推送代码，然后从包含该提交的分支重新执行一次 `Run workflow`；不要直接对旧运行点击 `Re-run jobs`，因为旧运行仍使用旧提交。这里可以继续使用原标签。当前错误发生在第一个镜像推送之前，不会留下不完整的同标签镜像集合。
+
+### 11.2 `ImagePullBackOff` 或 `ErrImagePull`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
@@ -449,19 +459,19 @@ kubectl get events -n train-evolution --sort-by=.lastTimestamp
 - 节点不能访问 `ghcr.io:443`。
 - 节点 DNS、代理或证书配置异常。
 
-### 11.2 `manifest unknown`
+### 11.3 `manifest unknown`
 
 镜像或标签不存在。打开 GitHub Package 页面检查标签，并确认部署命令中的 `Tag` 与 Actions 输入完全一致。
 
-### 11.3 `no matching manifest for linux/arm64`
+### 11.4 `no matching manifest for linux/arm64`
 
 节点是 `arm64`，但当前 Actions 只构建了 `linux/amd64`。需要使用 Buildx 构建多架构镜像，并确认所有基础镜像都支持目标架构。
 
-### 11.4 `x509: certificate signed by unknown authority`
+### 11.5 `x509: certificate signed by unknown authority`
 
 通常是企业 HTTPS 代理或自定义 CA 导致。应将可信 CA 配置到 containerd 的 registry hosts 配置中，不要使用 `skip_verify = true` 作为长期方案。
 
-### 11.5 Pod 一直 `Pending`
+### 11.6 Pod 一直 `Pending`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
