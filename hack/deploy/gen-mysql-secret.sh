@@ -47,15 +47,18 @@ function gen_secret_for_services {
   mysqlHost=""
   useOneHost=0
 
-  if [ $# == 4 ]; then
+  if [ "$#" -eq 4 ]; then
     mysqlHost="$4"
     useOneHost=1
   fi
-  rm $secret_yaml > /dev/null 2>&1
-  touch $secret_yaml
+
+  # The generated file is intentionally not tracked, so it does not exist on
+  # the first deployment. Truncate it when present, or create it otherwise.
+  : > "$secret_yaml"
+
   for s in $svc_list
   do
-    if [ useOneHost == 0 ]; then
+    if [ "$useOneHost" -eq 0 ]; then
       mysqlHost="ts-$s-mysql-leader"
     fi
     gen_secret_for_tt $s $mysqlHost $mysqlUser $mysqlPassword $mysqlDatabase

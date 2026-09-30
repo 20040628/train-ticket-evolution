@@ -27,19 +27,32 @@ tsPassword="Ts_123456"
 tsDB="ts"
 
 
+function helm_install_once {
+  local release="$1"
+  local targetNamespace="$2"
+  shift 2
+
+  if helm status "$release" -n "$targetNamespace" >/dev/null 2>&1; then
+    echo "Helm release $release already exists in namespace $targetNamespace; reusing it."
+  else
+    helm install "$release" "$@" -n "$targetNamespace"
+  fi
+}
+
+
 function deploy_infrastructures {
   namespace=$1
   echo "Start deployment Step <1/3>------------------------------------"
   echo "Start to deploy mysql cluster for nacos."
-  helm install $nacosDBRelease --set mysql.mysqlUser=$nacosDBUser --set mysql.mysqlPassword=$nacosDBPass --set mysql.mysqlDatabase=$nacosDBName $mysqlCharts -n $namespace
+  helm_install_once "$nacosDBRelease" "$namespace" --set mysql.mysqlUser=$nacosDBUser --set mysql.mysqlPassword=$nacosDBPass --set mysql.mysqlDatabase=$nacosDBName $mysqlCharts
   echo "Waiting for mysql cluster of nacos to be ready ......"
   kubectl rollout status statefulset/$nacosDBRelease-mysql -n $namespace
   echo "Start to deploy nacos."
-  helm install $nacosRelease --set nacos.db.host=$nacosDBHost --set nacos.db.username=$nacosDBUser --set nacos.db.name=$nacosDBName --set nacos.db.password=$nacosDBPass $nacosCharts -n $namespace
+  helm_install_once "$nacosRelease" "$namespace" --set nacos.db.host=$nacosDBHost --set nacos.db.username=$nacosDBUser --set nacos.db.name=$nacosDBName --set nacos.db.password=$nacosDBPass $nacosCharts
   echo "Waiting for nacos to be ready ......"
   kubectl rollout status statefulset/$nacosRelease -n $namespace
   echo "Start to deploy rabbitmq."
-  helm install $rabbitmqRelease $rabbitmqCharts -n $namespace
+  helm_install_once "$rabbitmqRelease" "$namespace" $rabbitmqCharts
   echo "Waiting for rabbitmq to be ready ......"
   kubectl rollout status deployment/$rabbitmqRelease -n $namespace
   echo "End deployment Step <1/3>--------------------------------------"
@@ -59,7 +72,7 @@ function deploy_tt_mysql_all_in_one {
   namespace=$1
   tsMysqlName="tsdb"
   echo "Start deployment Step <2/3>: mysql cluster of train-ticket services----------------------"
-  helm install $tsMysqlName --set mysql.mysqlUser=$tsUser --set mysql.mysqlPassword=$tsPassword --set mysql.mysqlDatabase=$tsDB $mysqlCharts -n $namespace 1>/dev/null
+  helm_install_once "$tsMysqlName" "$namespace" --set mysql.mysqlUser=$tsUser --set mysql.mysqlPassword=$tsPassword --set mysql.mysqlDatabase=$tsDB $mysqlCharts
   echo "Waiting for mysql cluster of train-ticket to be ready ......"
   kubectl rollout status statefulset/${tsMysqlName}-mysql -n $namespace
   gen_secret_for_services $tsUser $tsPassword $tsDB "${tsMysqlName}-mysql-leader"
@@ -72,7 +85,7 @@ function deploy_tt_mysql_each_service {
   for s in $svc_list
   do
     mysqlName="ts-$s"
-    helm install $mysqlName --set mysql.mysqlUser=$tsUser --set mysql.mysqlPassword=$tsPassword --set mysql.mysqlDatabase=$tsDB $mysqlCharts -n $namespace 1>/dev/null
+    helm_install_once "$mysqlName" "$namespace" --set mysql.mysqlUser=$tsUser --set mysql.mysqlPassword=$tsPassword --set mysql.mysqlDatabase=$tsDB $mysqlCharts
   done
 
   echo "Waiting for mysql clusters of train-ticket services to be ready ......"

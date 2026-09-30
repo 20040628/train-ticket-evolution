@@ -578,7 +578,41 @@ RUN apt-get update \
 
 工作流逐个推送镜像，因此在 `ts-avatar-service` 失败前可能已经推送了排在它前面的镜像。提交修复后，应从新提交执行一次新的 `Run workflow`，并使用新标签（例如 `log-evolution-v2-20260930`）；完整工作流成功前不要部署该标签。
 
-### 11.3 `ImagePullBackOff` 或 `ErrImagePull`
+### 11.3 MySQL 显示 `partitioned roll out complete` 后 `make` 返回错误 1
+
+如果日志停在下面的位置：
+
+```text
+partitioned roll out complete: 3 new pods have been updated...
+make: *** [Makefile:38: deploy] Error 1
+```
+
+这表示 MySQL StatefulSet 已经就绪，真正失败的是紧接着生成业务数据库 Secret 的步骤。旧脚本直接执行 `rm secret.yaml`；该文件是部署时生成且不纳入 Git 的文件，首次部署时不存在，`rm` 会返回 1，而 `deploy.sh` 的 `set -e` 会因此终止整个流程。
+
+仓库修复包括：
+
+- 使用 `: > secret.yaml` 创建或清空文件，不再因文件首次不存在而失败。
+- 修正单库/独立数据库模式的条件判断。
+- Helm release 已存在时直接复用，使中断后的部署能够安全重试，不会出现 `cannot re-use a name that is still in use`。
+
+不要执行 `make reset-deploy`，也不需要删除已经就绪的 MySQL Pod 或 PVC。拉取修复后直接重新执行相同部署命令：
+
+```bash
+git pull --ff-only
+
+helm list -n train-evolution
+kubectl get statefulset,pod -n train-evolution
+
+make deploy \
+  Namespace=train-evolution \
+  Repo=ghcr.io/20040628 \
+  Tag=log-evolution-v2-20260930 \
+  DeployArgs="--with-tracing"
+```
+
+脚本会跳过已经存在的 `nacosdb`、`nacos`、`rabbitmq` 和 `tsdb` Helm release，重新确认它们就绪，然后从 Secret 和业务服务部署阶段继续。
+
+### 11.4 `ImagePullBackOff` 或 `ErrImagePull`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
@@ -593,19 +627,19 @@ kubectl get events -n train-evolution --sort-by=.lastTimestamp
 - 节点不能访问 `ghcr.io:443`。
 - 节点 DNS、代理或证书配置异常。
 
-### 11.4 `manifest unknown`
+### 11.5 `manifest unknown`
 
 镜像或标签不存在。打开 GitHub Package 页面检查标签，并确认部署命令中的 `Tag` 与 Actions 输入完全一致。
 
-### 11.5 `no matching manifest for linux/arm64`
+### 11.6 `no matching manifest for linux/arm64`
 
 节点是 `arm64`，但当前 Actions 只构建了 `linux/amd64`。需要使用 Buildx 构建多架构镜像，并确认所有基础镜像都支持目标架构。
 
-### 11.6 `x509: certificate signed by unknown authority`
+### 11.7 `x509: certificate signed by unknown authority`
 
 通常是企业 HTTPS 代理或自定义 CA 导致。应将可信 CA 配置到 containerd 的 registry hosts 配置中，不要使用 `skip_verify = true` 作为长期方案。
 
-### 11.7 Pod 一直 `Pending`
+### 11.8 Pod 一直 `Pending`
 
 ```bash
 kubectl describe pod <pod-name> -n train-evolution
@@ -615,7 +649,7 @@ kubectl get storageclass
 
 如果 PVC 为 `Pending`，检查默认 StorageClass 和动态供应器。
 
-### 11.8 重新发布后仍运行旧镜像
+### 11.9 重新发布后仍运行旧镜像
 
 本项目使用 `imagePullPolicy: IfNotPresent`。不要覆盖已使用的标签；每次发布使用新标签，例如：
 
