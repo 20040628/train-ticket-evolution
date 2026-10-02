@@ -190,12 +190,14 @@ kind: Service
 metadata:
   name: ts-gateway-service
 spec:
+  type: NodePort
   ports:
     - name: http
       port: 18888
+      targetPort: 18888
+      nodePort: 30024
   selector:
     app: ts-gateway-service
-  type: ClusterIP
 ---
 apiVersion: v1
 kind: Service
@@ -477,9 +479,11 @@ kind: Service
 metadata:
   name: ts-ui-dashboard
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: http
       port: 8080
+      targetPort: 8080
+      nodePort: 30025
   selector:
     app: ts-ui-dashboard

@@ -51,6 +51,8 @@ function deploy_infrastructures {
   helm_install_once "$nacosRelease" "$namespace" --set nacos.db.host=$nacosDBHost --set nacos.db.username=$nacosDBUser --set nacos.db.name=$nacosDBName --set nacos.db.password=$nacosDBPass $nacosCharts
   echo "Waiting for nacos to be ready ......"
   kubectl rollout status statefulset/$nacosRelease -n $namespace
+  kubectl patch service "$nacosRelease" -n "$namespace" --type merge --patch \
+    '{"spec":{"type":"NodePort","ports":[{"name":"server","protocol":"TCP","port":8848,"targetPort":8848,"nodePort":30021},{"name":"rpc","protocol":"TCP","port":7848,"targetPort":7848,"nodePort":30022}]}}' >/dev/null
   echo "Start to deploy rabbitmq."
   helm_install_once "$rabbitmqRelease" "$namespace" $rabbitmqCharts
   echo "Waiting for rabbitmq to be ready ......"

@@ -133,11 +133,12 @@ metadata:
   labels:
     app: skywalking-ui
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
     - name: http
       port: 8080
       protocol: TCP
       targetPort: 8080
+      nodePort: 30023
   selector:
     app: skywalking-ui

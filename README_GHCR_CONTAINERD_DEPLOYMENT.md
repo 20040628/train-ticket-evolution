@@ -473,7 +473,7 @@ make deploy \
 
 4. 部署带 SkyWalking Agent 的业务服务。
 5. 在 `train-evolution` 中部署独立的 SkyWalking 和 Elasticsearch。
-6. 保持 Gateway、UI、Nacos 和 SkyWalking UI 为 `ClusterIP`，不占用原 `train` 环境的 NodePort。
+6. 使用与原 `train` 环境不同的固定 NodePort 暴露 Nacos、SkyWalking UI、Gateway 和 Dashboard。
 7. 不重复部署集群级 Prometheus/Grafana 清单。
 
 如果选择 6.1 的 Public 方案，不需要创建 `imagePullSecret`。如果选择 6.2 的 Private 方案，必须先创建并绑定 `ghcr-pull-secret`；部署命令本身保持不变。
@@ -516,7 +516,45 @@ kubectl get pod,svc,configmap,secret -n train-evolution | grep -E 'nacos|mysql|r
 
 ## 10. 访问系统
 
-演化版入口使用 `ClusterIP`，不会与原系统的固定 NodePort 冲突。
+演化版入口使用独立 NodePort，避开原系统已经占用的 `30417`、`32612`、`30005`、`30467` 和 `32677`。
+
+部署前先检查整个集群，确认候选端口没有被其他 namespace 使用：
+
+```bash
+kubectl get svc -A \
+  -o custom-columns='NAMESPACE:.metadata.namespace,NAME:.metadata.name,TYPE:.spec.type,NODEPORTS:.spec.ports[*].nodePort'
+```
+
+演化版端口映射：
+
+| 入口 | Service 端口 | NodePort |
+|---|---:|---:|
+| Nacos HTTP | 8848 | 30021 |
+| Nacos RPC | 7848 | 30022 |
+| SkyWalking UI | 8080 | 30023 |
+| Gateway | 18888 | 30024 |
+| Dashboard | 8080 | 30025 |
+
+查询可访问的节点 IP：
+
+```bash
+kubectl get nodes -o wide
+```
+
+假设节点 IP 为 `<NODE_IP>`，访问地址为：
+
+```text
+Dashboard:    http://<NODE_IP>:30025
+SkyWalking:   http://<NODE_IP>:30023
+Nacos:        http://<NODE_IP>:30021/nacos/
+Gateway API:  http://<NODE_IP>:30024
+```
+
+节点防火墙或云安全组必须允许所需端口。Nacos 和 SkyWalking 属于管理入口，不应直接向整个互联网开放，建议只允许可信来源 IP。
+
+对于已经安装过、因重试逻辑而复用的 Nacos Helm release，部署脚本会额外修补现有 `nacos` Service，使 `30021` 和 `30022` 立即生效；不会修改必须保持为 Headless ClusterIP 的 `nacos-headless`。
+
+如果只需要临时访问，也可以继续使用端口转发。
 
 转发 UI：
 
@@ -542,7 +580,7 @@ kubectl port-forward -n train-evolution service/skywalking-ui 8082:8080
 http://localhost:8082
 ```
 
-如果需要长期对外访问，应为演化环境配置独立 Ingress 域名，而不是恢复与 `train` 相同的 NodePort。
+生产或长期共享环境仍建议使用独立 Ingress 域名和 TLS；NodePort 更适合受控内网、测试和实验环境。
 
 ## 11. 常见错误与排查
 
@@ -710,5 +748,5 @@ Private 镜像的首次配置和验证见 6.2。Token 到期或被撤销后，�
 - [ ] `train` 中的演化前版本仍正常运行。
 - [ ] 演化版部署命令使用 `Namespace=train-evolution`。
 - [ ] 演化版业务镜像均来自 `ghcr.io/20040628/*:<唯一标签>`。
-- [ ] Gateway、UI、Nacos、SkyWalking UI 未占用原环境 NodePort。
+- [ ] 演化版使用 `30021-30025`，且未占用原环境或其他 namespace 的 NodePort。
 - [ ] Nacos、MySQL、RabbitMQ 和 SkyWalking 数据与 `train` 环境隔离。

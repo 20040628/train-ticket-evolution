@@ -33,9 +33,11 @@ spec:
     - port: 8848
       name: server
       targetPort: 8848
+      nodePort: {{ .Values.service.serverNodePort }}
     - port: 7848
       name: rpc
       targetPort: 7848
+      nodePort: {{ .Values.service.rpcNodePort }}
   selector:
     app: {{ .Release.Name }}
   type: {{ .Values.service.type }}
